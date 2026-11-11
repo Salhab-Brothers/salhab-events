@@ -1,4 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query'
+import { Analytics } from '@vercel/analytics/react'
 import { queryClientInstance } from '@/lib/query-client'
 import PageNotFound from './lib/PageNotFound';
 import Home from './pages/Home';
@@ -8,6 +9,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClientInstance}>
       {window.location.pathname === '/' ? <Home /> : <PageNotFound />}
+      <Analytics />
     </QueryClientProvider>
   )
 }

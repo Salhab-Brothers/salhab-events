@@ -1,0 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Tajawal:wght@300;400;500;700;800&family=Noto+Sans+Arabic:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 36 33% 97%;
+    --foreground: 20 14% 12%;
+    --card: 36 25% 99%;
+    --card-foreground: 20 14% 12%;
+    --popover: 36 25% 99%;
+    --popover-foreground: 20 14% 12%;
+    --primary: 183 98% 22%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 36 30% 93%;
+    --secondary-foreground: 20 14% 20%;
+    --muted: 36 20% 93%;
+    --muted-foreground: 20 10% 45%;
+    --accent: 36 40% 90%;
+    --accent-foreground: 20 14% 12%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 36 20% 88%;
+    --input: 36 20% 88%;
+    --ring: 183 98% 22%;
+    --radius: 0.75rem;
+
+    /* Custom app tokens */
+    --booked-morning: 38 65% 52%;
+    --booked-evening: 210 55% 42%;
+    --booked-full: 20 10% 38%;
+    --free-day: 158 45% 88%;
+
+    --font-heading: 'Cairo', 'Tajawal', sans-serif;
+    --font-body: 'Noto Sans Arabic', 'Cairo', sans-serif;
+  }
+
+  .dark {
+    --background: 20 14% 8%;
+    --foreground: 36 25% 93%;
+    --card: 20 12% 11%;
+    --card-foreground: 36 25% 93%;
+    --popover: 20 12% 11%;
+    --popover-foreground: 36 25% 93%;
+    --primary: 183 70% 38%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 20 12% 16%;
+    --secondary-foreground: 36 25% 85%;
+    --muted: 20 10% 15%;
+    --muted-foreground: 36 15% 55%;
+    --accent: 20 12% 18%;
+    --accent-foreground: 36 25% 90%;
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 20 10% 20%;
+    --input: 20 10% 20%;
+    --ring: 183 70% 38%;
+
+    --booked-morning: 38 55% 45%;
+    --booked-evening: 210 45% 38%;
+    --booked-full: 20 8% 32%;
+    --free-day: 158 30% 22%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    direction: rtl;
+    font-family: var(--font-body);
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+@layer utilities {
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+  .font-body {
+    font-family: var(--font-body);
+  }
+  .booked-morning {
+    background-color: hsl(var(--booked-morning));
+  }
+  .booked-evening {
+    background-color: hsl(var(--booked-evening));
+  }
+  .booked-full {
+    background-color: hsl(var(--booked-full));
+  }
+  .free-day {
+    background-color: hsl(var(--free-day));
+  }
+  .text-booked-morning {
+    color: hsl(var(--booked-morning));
+  }
+  .text-booked-evening {
+    color: hsl(var(--booked-evening));
+  }
+  .text-booked-full {
+    color: hsl(var(--booked-full));
+  }
+}

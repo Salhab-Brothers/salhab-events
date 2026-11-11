@@ -1,0 +1,59 @@
+import { CalendarDays, CheckCircle, Clock } from 'lucide-react';
+import { format, parseISO, isAfter, startOfToday } from 'date-fns';
+import { ar } from 'date-fns/locale';
+
+export default function SummaryBar({ bookings }) {
+  const today = startOfToday();
+
+  const upcoming = bookings
+    .filter(b => b.status !== 'cancelled' && isAfter(parseISO(b.date), today))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const nextEvent = upcoming[0];
+  const bookedCount = bookings.filter(b => b.status !== 'cancelled').length;
+
+  const stats = [
+    {
+      icon: CheckCircle,
+      label: 'إجمالي المحجوز',
+      value: `${bookedCount} يوم`,
+      color: 'text-primary',
+      bg: 'bg-primary/10',
+    },
+    {
+      icon: Clock,
+      label: 'المناسبات القادمة',
+      value: `${upcoming.length} مناسبة`,
+      color: 'text-amber-600 dark:text-amber-400',
+      bg: 'bg-amber-50 dark:bg-amber-950/30',
+    },
+    {
+      icon: CalendarDays,
+      label: 'أقرب مناسبة',
+      value: nextEvent
+        ? `${nextEvent.event_name} — ${format(parseISO(nextEvent.date), 'd MMMM', { locale: ar })}`
+        : 'لا توجد مناسبات قادمة',
+      color: 'text-blue-600 dark:text-blue-400',
+      bg: 'bg-blue-50 dark:bg-blue-950/30',
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+      {stats.map(({ icon: Icon, label, value, color, bg }) => (
+        <div
+          key={label}
+          className={`flex items-center gap-4 px-5 py-4 rounded-xl border border-border/50 ${bg} transition-all`}
+        >
+          <div className={`p-2.5 rounded-lg bg-white/60 dark:bg-black/20 ${color}`}>
+            <Icon size={20} />
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground font-body">{label}</p>
+            <p className={`text-sm font-heading font-semibold mt-0.5 ${color} leading-tight`}>{value}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}

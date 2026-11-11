@@ -43,7 +43,7 @@ export default function ReviewsPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => entities.Review.create(data),
+    mutationFn: (data) => entities.Review.create({ ...data, event_date: data.event_date || null }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['reviews'] });
       setSubmitted(true);
@@ -59,6 +59,8 @@ export default function ReviewsPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.rating) return;
+    // Honeypot: bots fill the hidden field; pretend success and drop it.
+    if (e.target.elements.website?.value) { setSubmitted(true); return; }
     createMutation.mutate(form);
   };
 
@@ -104,7 +106,7 @@ export default function ReviewsPage() {
         </h2>
         {submitted && (
           <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 mb-4">
-            <p className="text-sm font-body font-medium text-emerald-700 dark:text-emerald-300">✓ شكراً! تم إرسال تقييمك بنجاح</p>
+            <p className="text-sm font-body font-medium text-emerald-700 dark:text-emerald-300">✓ شكراً! تم إرسال تقييمك وسيظهر بعد مراجعة الإدارة</p>
           </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -147,6 +149,10 @@ export default function ReviewsPage() {
             />
           </div>
 
+          <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
+          {createMutation.isError && (
+            <p className="text-sm font-body text-destructive">تعذّر إرسال التقييم. حاول مرة أخرى.</p>
+          )}
           <Button type="submit" disabled={!form.rating || createMutation.isPending} className="font-body gap-2">
             <Send size={15} />
             {createMutation.isPending ? 'جارٍ الإرسال...' : 'إرسال التقييم'}

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { formatFullDateStr, formatMonthYearStr } from '@/lib/levantineMonths';
-import { Search, CalendarDays, User, Phone, X } from 'lucide-react';
+import { Search, CalendarDays, User, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -235,16 +235,7 @@ export default function EventsPage({ bookings }) {
                       <User size={13} className="text-primary/60" />
                       <span>{booking.person_name}</span>
                     </div>
-                    {booking.phone && (
-                      <div className="flex items-center gap-1.5">
-                        <Phone size={13} className="text-primary/60" />
-                        <span dir="ltr">{booking.phone}</span>
-                      </div>
-                    )}
                   </div>
-                  {booking.notes && (
-                    <p className="mt-2 text-xs font-body text-muted-foreground/70 border-t border-border/40 pt-2">{booking.notes}</p>
-                  )}
                 </div>
               </div>
             </div>

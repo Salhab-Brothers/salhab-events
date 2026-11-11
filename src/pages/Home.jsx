@@ -1,15 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CalendarPage from './CalendarPage';
 import EventsPage from './EventsPage';
 import RequestPage from './RequestPage';
-import AdminPage from './AdminPage';
 import ReviewsPage from './ReviewsPage';
-import StatsPage from './StatsPage';
 import AdminAuth from '@/components/AdminAuth';
+
+// Heavy, rarely-used pages (charts, image export) load on demand.
+const AdminPage = lazy(() => import('./AdminPage'));
+const StatsPage = lazy(() => import('./StatsPage'));
 import { useTheme } from '@/lib/theme';
-import { entities } from '@/api/api';
+import { entities, PUBLIC_BOOKING_COLUMNS } from '@/api/api';
 import { useIsAdmin, signOutAdmin } from '@/lib/adminSession';
 
 
@@ -23,11 +25,23 @@ export default function Home() {
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const fetchedRef = useRef(false);
 
+  const [loadError, setLoadError] = useState(false);
+
   const fetchData = async () => {
+    try {
+      await loadData();
+      setLoadError(false);
+    } catch (err) {
+      console.error('Failed to load data', err);
+      setLoadError(true);
+    }
+  };
+
+  const loadData = async () => {
     // Requests are admin-only; anonymous visitors only load bookings.
     const [bList, rList] = await Promise.all([
-      entities.Booking.list('-created_date', 200),
-      isAdmin ? entities.BookingRequest.list('-created_date', 200) : Promise.resolve([]),
+      entities.Booking.list('-created_date', 1000, isAdmin ? '*' : PUBLIC_BOOKING_COLUMNS),
+      isAdmin ? entities.BookingRequest.list('-created_date', 1000) : Promise.resolve([]),
     ]);
     // Deduplicate by composite key (event_name + date + time_slot) as safety net
     const dedupeBookings = (list) => {
@@ -77,6 +91,15 @@ export default function Home() {
       );
     }
 
+    if (loadError && (activePage === 'calendar' || activePage === 'events' || activePage === 'stats')) {
+      return (
+        <div className="text-center py-16 space-y-4">
+          <p className="font-body text-foreground">تعذّر تحميل البيانات. تحقق من الاتصال وحاول مرة أخرى.</p>
+          <button onClick={fetchData} className="font-body text-sm text-primary hover:underline">إعادة المحاولة</button>
+        </div>
+      );
+    }
+
     switch (activePage) {
       case 'calendar':
         return <CalendarPage bookings={bookings} />;
@@ -119,7 +142,7 @@ export default function Home() {
         toggleTheme={toggle}
       />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {renderPage()}
+        <Suspense fallback={<div className="min-h-[40vh]" />}>{renderPage()}</Suspense>
       </main>
       <Footer />
     </div>

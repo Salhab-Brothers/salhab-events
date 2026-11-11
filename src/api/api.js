@@ -14,9 +14,12 @@ const check = ({ data, error }) => {
 };
 
 // '-created_date' means newest first, 'created_date' oldest first.
+export const PUBLIC_BOOKING_COLUMNS =
+  'id,date,event_name,time_slot,person_name,status,book_diwan,created_date';
+
 const entity = (table) => ({
-  list: async (sort = '-created_date', limit = 200) =>
-    check(await supabase.from(table).select('*')
+  list: async (sort = '-created_date', limit = 200, columns = '*') =>
+    check(await supabase.from(table).select(columns)
       .order(sort.replace(/^-/, ''), { ascending: !sort.startsWith('-') })
       .limit(limit)),
   create: async (row) => check(await supabase.from(table).insert(row)),

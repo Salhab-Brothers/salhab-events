@@ -28,19 +28,29 @@ export default function RequestPage() {
   });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const set =(k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    // Honeypot: real visitors never see or fill this field; bots do.
+    if (e.target.elements.website?.value) { setSubmitted(true); return; }
     setLoading(true);
-    await entities.BookingRequest.create({
-      ...form,
-      status: 'pending',
-      submitted_at: new Date().toISOString(),
-    });
-    setLoading(false);
-    setSubmitted(true);
+    try {
+      await entities.BookingRequest.create({
+        ...form,
+        status: 'pending',
+        submitted_at: new Date().toISOString(),
+      });
+      setSubmitted(true);
+    } catch (err) {
+      console.error('Request submit failed', err);
+      setError('تعذّر إرسال الطلب. حاول مرة أخرى أو تواصل معنا مباشرة.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (submitted) {
@@ -178,6 +188,8 @@ export default function RequestPage() {
           </p>
         </div>
 
+        <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
+        {error && <p className="text-sm font-body text-destructive">{error}</p>}
         <Button type="submit" disabled={loading} className="w-full font-body gap-2">
           <Send size={16} />
           {loading ? 'جارٍ الإرسال...' : 'إرسال الطلب'}

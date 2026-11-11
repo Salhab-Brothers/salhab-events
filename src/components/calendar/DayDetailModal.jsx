@@ -1,5 +1,5 @@
 import { formatFullDate } from '@/lib/levantineMonths';
-import { X, Clock, User, Phone, FileText } from 'lucide-react';
+import { X, Clock, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TIME_SLOT_LABELS } from '@/lib/data';
 import EventCardDownload from '@/components/EventCardDownload';
@@ -80,16 +80,6 @@ export default function DayDetailModal({ day, dateStr, bookings, dayOfWeek, isla
                     <User size={14} className="text-primary/70 shrink-0" />
                     <span>{booking.person_name}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Phone size={14} className="text-primary/70 shrink-0" />
-                    <span dir="ltr">{booking.phone}</span>
-                  </div>
-                  {booking.notes && (
-                    <div className="flex items-start gap-2">
-                      <FileText size={14} className="text-primary/70 shrink-0 mt-0.5" />
-                      <span>{booking.notes}</span>
-                    </div>
-                  )}
                 </div>
               </div>
             ))

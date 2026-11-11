@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { entities } from '@/api/api';
 import { TIME_SLOT_LABELS } from '@/lib/data';
 import AddBookingPage from './AddBookingPage';
+import ReviewModeration from '@/components/ReviewModeration';
 import DownloadEventsImage from '@/components/DownloadEventsImage';
 import EventCardDownload from '@/components/EventCardDownload';
 
@@ -22,9 +23,20 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
   const pendingRequests = requests.filter(r => r.status === 'pending');
   const allRequests = requests;
 
-  const approveRequest = async (req) => {
-    setLoading(req.id);
-    // Create booking from request
+  // Runs an admin action; always refreshes, and tells the admin if it failed.
+  const run = async (key, action) => {
+    setLoading(key);
+    try {
+      await action();
+    } catch (err) {
+      console.error('Admin action failed', err);
+      alert('تعذّر تنفيذ العملية. حاول مرة أخرى.');
+    }
+    setLoading(null);
+    onRefresh();
+  };
+
+  const approveRequest = (req) => run(req.id, async () => {
     await entities.Booking.create({
       date: req.date,
       event_name: req.event_name,
@@ -35,29 +47,14 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
       status: 'confirmed',
     });
     await entities.BookingRequest.update(req.id, { status: 'approved' });
-    setLoading(null);
-    onRefresh();
-  };
+  });
 
-  const rejectRequest = async (req) => {
-    setLoading(req.id + '-reject');
-    await entities.BookingRequest.update(req.id, { status: 'rejected' });
-    setLoading(null);
-    onRefresh();
-  };
+  const rejectRequest = (req) => run(req.id + '-reject', () =>
+    entities.BookingRequest.update(req.id, { status: 'rejected' }));
 
-  const deleteBooking = async (booking) => {
+  const deleteBooking = (booking) => {
     if (!confirm(`هل تريد حذف "${booking.event_name}"؟`)) return;
-    try {
-      await entities.Booking.delete(booking.id);
-    } catch (err) {
-      // 404 = already deleted, remove from UI silently
-      const msg = err?.message || '';
-      if (msg.includes('404') || msg.includes('not found') || msg.toLowerCase().includes('not found')) {
-        alert('تم حذف الحجز مسبقاً أو لم يُعثر عليه');
-      }
-    }
-    onRefresh();
+    return run(booking.id + '-delete', () => entities.Booking.delete(booking.id));
   };
 
   const fullName = (r) => [r.first_name, r.second_name, r.third_name, r.last_name].filter(Boolean).join(' ');
@@ -83,6 +80,7 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
           { id: 'requests', label: `الطلبات`, badge: pendingRequests.length },
           { id: 'bookings', label: 'الحجوزات' },
           { id: 'add-booking', label: 'إضافة حجز' },
+          { id: 'reviews', label: 'التقييمات' },
           { id: 'download', label: 'تحميل الصورة' },
         ].map(t => (
           <button
@@ -173,6 +171,8 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
       {tab === 'download' && (
         <DownloadEventsImage bookings={bookings} onRefresh={onRefresh} />
       )}
+
+      {tab === 'reviews' && <ReviewModeration />}
 
       {/* Add Booking Tab */}
       {tab === 'add-booking' && (

@@ -28,6 +28,7 @@ export default function AddBookingPage({ bookings, onBookingAdded, editingBookin
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
   const [conflicts, setConflicts] = useState(null); // null = no modal, [] = modal shown
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
@@ -48,10 +49,19 @@ export default function AddBookingPage({ bookings, onBookingAdded, editingBookin
 
   const saveBooking = async () => {
     setLoading(true);
-    if (editingBooking) {
-      await entities.Booking.update(editingBooking.id, { ...form, status: 'confirmed' });
-    } else {
-      await entities.Booking.create({ ...form, status: 'confirmed' });
+    setError('');
+    try {
+      if (editingBooking) {
+        await entities.Booking.update(editingBooking.id, { ...form, status: 'confirmed' });
+      } else {
+        await entities.Booking.create({ ...form, status: 'confirmed' });
+      }
+    } catch (err) {
+      console.error('Save booking failed', err);
+      setError('تعذّر حفظ الحجز. حاول مرة أخرى.');
+      setLoading(false);
+      setConflicts(null);
+      return;
     }
     setLoading(false);
     setConflicts(null);

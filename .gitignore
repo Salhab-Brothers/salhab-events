@@ -37,3 +37,5 @@ OldProject/
 # exported data (contains personal info)
 *_export.csv
 data-export/
+
+coverage/

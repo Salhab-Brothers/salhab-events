@@ -1,0 +1,121 @@
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import AdminAuth from '@/components/AdminAuth';
+import CalendarPage from './CalendarPage';
+import EventsPage from './EventsPage';
+import RequestPage from './RequestPage';
+import ReviewsPage from './ReviewsPage';
+import { useTheme } from '@/lib/theme';
+import { entities, PUBLIC_BOOKING_COLUMNS } from '@/api/api';
+import { useIsAdmin, signOutAdmin } from '@/lib/adminSession';
+import type { Booking, BookingRequest, PageId } from '@/types';
+
+// Heavy, rarely-used pages (charts, image export) load on demand.
+const AdminPage = lazy(() => import('./AdminPage'));
+const StatsPage = lazy(() => import('./StatsPage'));
+
+export default function Home() {
+  const { theme, toggle } = useTheme();
+  const [activePage, setActivePage] = useState<PageId>('calendar');
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [requests, setRequests] = useState<BookingRequest[]>([]);
+  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
+  const [initialized, setInitialized] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
+
+  // Requests and full booking rows are admin-only; visitors load public columns.
+  // Re-created when the admin state changes, which re-runs the load effect below.
+  const fetchData = useCallback(async () => {
+    try {
+      const [bList, rList] = await Promise.all([
+        entities.Booking.list('-created_date', 1000, isAdmin ? '*' : PUBLIC_BOOKING_COLUMNS),
+        isAdmin ? entities.BookingRequest.list('-created_date', 1000) : Promise.resolve([]),
+      ]);
+      setBookings(bList);
+      setRequests(rList);
+      setLoadError(false);
+    } catch (err) {
+      console.error('Failed to load data', err);
+      setLoadError(true);
+    }
+  }, [isAdmin]);
+
+  useEffect(() => {
+    fetchData().then(() => setInitialized(true));
+  }, [fetchData]);
+
+  const handlePageChange = (page: PageId) => {
+    setEditingBooking(null);
+    setActivePage(page);
+    // Fresh data when returning to the public listings
+    if (page === 'calendar' || page === 'events') fetchData();
+  };
+
+  const handleEditBooking = (booking: Booking) => {
+    setEditingBooking(booking);
+    setActivePage('admin');
+  };
+
+  const renderPage = () => {
+    if (!initialized) {
+      return (
+        <div className="flex items-center justify-center min-h-[40vh]">
+          <div className="w-8 h-8 border-4 border-border border-t-primary rounded-full animate-spin" />
+        </div>
+      );
+    }
+
+    if (loadError && (activePage === 'calendar' || activePage === 'events' || activePage === 'stats')) {
+      return (
+        <div className="text-center py-16 space-y-4">
+          <p className="font-body text-foreground">تعذّر تحميل البيانات. تحقق من الاتصال وحاول مرة أخرى.</p>
+          <button onClick={fetchData} className="font-body text-sm text-primary hover:underline">إعادة المحاولة</button>
+        </div>
+      );
+    }
+
+    switch (activePage) {
+      case 'calendar':
+        return <CalendarPage bookings={bookings} />;
+      case 'events':
+        return <EventsPage bookings={bookings} />;
+      case 'request':
+        return <RequestPage />;
+      case 'reviews':
+        return <ReviewsPage />;
+      case 'stats':
+        return <StatsPage bookings={bookings} />;
+      case 'admin':
+        if (adminLoading) return null;
+        if (!isAdmin) return <AdminAuth />;
+        return (
+          <AdminPage
+            bookings={bookings}
+            requests={requests}
+            onRefresh={fetchData}
+            onEditBooking={handleEditBooking}
+            editingBooking={editingBooking}
+            onClearEdit={() => setEditingBooking(null)}
+            onLogout={() => { signOutAdmin(); setActivePage('calendar'); }}
+          />
+        );
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar
+        activePage={activePage}
+        setActivePage={handlePageChange}
+        theme={theme}
+        toggleTheme={toggle}
+      />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <Suspense fallback={<div className="min-h-[40vh]" />}>{renderPage()}</Suspense>
+      </main>
+      <Footer />
+    </div>
+  );
+}

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import userEvent from '@/test/user';
 import { renderWithQuery } from '@/test/render';
 import { makeReview } from '@/test/factories';
 

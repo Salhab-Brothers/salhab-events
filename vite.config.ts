@@ -9,6 +9,9 @@ export default defineConfig({
   resolve: { alias: { '@': path.resolve(import.meta.dirname, 'src') } },
   test: {
     environment: 'jsdom',
+    // vmThreads builds the jsdom environment once per worker instead of once per file:
+    // about 2x faster here (14s to 6s on 2 cores). If a test ever leaks state, switch to 'forks'.
+    pool: 'vmThreads',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],

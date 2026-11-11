@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import userEvent from '@/test/user';
 import Navbar from './Navbar';
 import type { PageId, Theme } from '@/types';
 

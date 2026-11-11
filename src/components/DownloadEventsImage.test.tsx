@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import userEvent from '@/test/user';
 import { makeBooking } from '@/test/factories';
 
 const { html2canvas } = vi.hoisted(() => ({ html2canvas: vi.fn() }));

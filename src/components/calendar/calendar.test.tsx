@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import userEvent from '@/test/user';
 import DayCell, { type SlotStatus } from './DayCell';
 import DayDetailModal from './DayDetailModal';
 import CalendarGrid from './CalendarGrid';

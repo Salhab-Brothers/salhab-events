@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import userEvent from '@/test/user';
 import { makeBooking, makeRequest } from '@/test/factories';
 
 const { Booking, BookingRequest, adminState, signOutAdmin } = vi.hoisted(() => ({

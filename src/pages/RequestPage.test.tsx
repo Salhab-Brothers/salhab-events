@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import userEvent from '@/test/user';
 
 const { BookingRequest } = vi.hoisted(() => ({ BookingRequest: { create: vi.fn() } }));
 vi.mock('@/api/api', () => ({ entities: { BookingRequest } }));

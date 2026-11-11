@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createRef } from 'react';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import userEvent from '@/test/user';
 import { Button, buttonVariants } from './button';
 import { Input } from './input';
 import { Label } from './label';

@@ -28,3 +28,11 @@ test('request form is gated by the captcha', async ({ page }) => {
   // The widget lives in a closed shadow root, so check its effect: no sending until it's solved.
   await expect(page.getByRole('button', { name: /إرسال/ })).toBeDisabled();
 });
+
+test('the site can be installed and works offline (manifest, icons, service worker)', async ({ request }) => {
+  const manifest = await (await request.get('/manifest.json')).json();
+  for (const icon of manifest.icons as { src: string }[]) expect((await request.get(icon.src)).ok(), icon.src).toBe(true);
+  const sw = await request.get('/sw.js');
+  expect(sw.ok()).toBe(true);
+  expect(sw.headers()['content-type']).toMatch(/javascript/);
+});

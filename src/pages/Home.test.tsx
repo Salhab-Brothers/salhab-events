@@ -67,6 +67,17 @@ describe('Home: loading', () => {
     expect(await screen.findByText('calendar:2')).toBeInTheDocument();
   });
 
+  it('shows the retry message at once when the browser is offline, without calling the database', async () => {
+    const online = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    render(<Home />);
+    expect(await screen.findByText(/تعذّر تحميل البيانات/)).toBeInTheDocument();
+    expect(Booking.list).not.toHaveBeenCalled();
+    online.mockReturnValue(true);
+    await userEvent.click(screen.getByText('إعادة المحاولة'));
+    expect(await screen.findByText('calendar:2')).toBeInTheDocument();
+    online.mockRestore();
+  });
+
   it('keeps pages that need no data usable during a load failure', async () => {
     Booking.list.mockRejectedValue(new Error('down'));
     render(<Home />);

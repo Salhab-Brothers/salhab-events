@@ -21,7 +21,7 @@ describe('Logo', () => {
 describe('Footer', () => {
   it('links to the profile page safely', () => {
     render(<Footer />);
-    const link = screen.getByRole('link', { name: 'Salhab Brother' });
+    const link = screen.getByRole('link', { name: 'SalhabBrothers' });
     expect(link).toHaveAttribute('href', 'https://linktr.ee/SalhabBrothers');
     expect(link).toHaveAttribute('target', '_blank');
     expect(link.getAttribute('rel')).toContain('noopener');

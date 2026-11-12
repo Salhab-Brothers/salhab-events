@@ -6,7 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { entities } from '@/api/api';
 import IslamicDateWarning from '@/components/IslamicDateWarning';
+import Captcha from '@/components/Captcha';
 import { honeypotTripped } from '@/lib/honeypot';
+import { captchaSiteKey, sendPublic } from '@/lib/publicSubmit';
 import { BOOKABLE_SLOTS } from '@/lib/data';
 import type { BookingRequest } from '@/types';
 
@@ -38,6 +40,8 @@ export default function RequestPage() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [token, setToken] = useState<string | null>(null);
+  const [captchaRound, setCaptchaRound] = useState(0);
 
   const set = <K extends keyof RequestForm>(k: K, v: RequestForm[K]) => setForm(f => ({ ...f, [k]: v }));
 
@@ -48,17 +52,20 @@ export default function RequestPage() {
     if (honeypotTripped(e.currentTarget)) { setSubmitted(true); return; }
     setLoading(true);
     try {
-      await entities.BookingRequest.create({
+      await sendPublic('request', {
         ...form,
-        status: 'pending',
+        status: 'pending' as const,
         submitted_at: new Date().toISOString(),
-      });
+      }, token, row => entities.BookingRequest.create(row));
       setSubmitted(true);
     } catch (err) {
       console.error('Request submit failed', err);
       setError('تعذّر إرسال الطلب. حاول مرة أخرى أو تواصل معنا مباشرة.');
     } finally {
       setLoading(false);
+      // A captcha token works once; ask for a fresh one.
+      setToken(null);
+      setCaptchaRound(n => n + 1);
     }
   };
 
@@ -193,8 +200,9 @@ export default function RequestPage() {
         </div>
 
         <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
+        <Captcha key={captchaRound} onToken={setToken} />
         {error && <p className="text-sm font-body text-destructive">{error}</p>}
-        <Button type="submit" disabled={loading} className="w-full font-body gap-2">
+        <Button type="submit" disabled={loading || (!!captchaSiteKey() && !token)} className="w-full font-body gap-2">
           <Send size={16} />
           {loading ? 'جارٍ الإرسال...' : 'إرسال الطلب'}
         </Button>

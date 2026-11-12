@@ -37,6 +37,17 @@ Access is enforced by row-level security in the database, not by the UI. Passwor
 
 Free projects pause after about a week of inactivity. `.github/workflows/keepalive.yml` pings the API twice a week. Add two repository secrets (Settings, Secrets and variables, Actions): `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`. GitHub disables scheduled workflows after 60 days without repo activity, so re-enable it from the Actions tab if that happens. Free projects have no automatic backups: export the tables (Table Editor, Export to CSV) from time to time.
 
+## Captcha on the public forms (optional)
+
+Booking requests and reviews are protected by a hidden field and review moderation. For stronger protection, turn on Cloudflare Turnstile (free):
+
+1. Cloudflare dashboard, Turnstile, add a widget for your site domain. Copy the site key and the secret key.
+2. Deploy the checking function: `supabase functions deploy submit --no-verify-jwt`, then `supabase secrets set TURNSTILE_SECRET=<secret key>`.
+3. Set `VITE_TURNSTILE_SITE_KEY=<site key>` in Vercel (all environments) and redeploy. Forms now send through the function. Test a request and a review on the site.
+4. Only then run `supabase/migrations/20261112000000_captcha_only_inserts.sql` in the SQL Editor. It stops the browser from inserting directly, so bots cannot skip the captcha.
+
+With no site key set, forms insert directly as before (do not run the step 4 migration in that case).
+
 ## Moving data from the old system
 
 `python3 -I scripts/csv-to-sql.py <folder with Booking_export.csv and BookingRequest_export.csv>` writes `data-export/import.sql` (gitignored, contains personal data); run it in the SQL Editor. Add `--replace` to wipe and re-import (only before cutover, because afterwards it would erase real data).

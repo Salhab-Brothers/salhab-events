@@ -8,7 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { entities } from '@/api/api';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import Captcha from '@/components/Captcha';
 import { honeypotTripped } from '@/lib/honeypot';
+import { captchaSiteKey, sendPublic } from '@/lib/publicSubmit';
 
 const starClass = (filled: boolean) =>
   filled ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/40';
@@ -54,6 +56,8 @@ export default function ReviewsPage() {
   const qc = useQueryClient();
   const [form, setForm] = useState<ReviewForm>(EMPTY_FORM);
   const [submitted, setSubmitted] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [captchaRound, setCaptchaRound] = useState(0);
 
   const { data: reviews = [] } = useQuery({
     queryKey: ['reviews'],
@@ -61,7 +65,10 @@ export default function ReviewsPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: ReviewForm) => entities.Review.create({ ...data, event_date: data.event_date || null }),
+    mutationFn: (data: ReviewForm) => sendPublic('review', { ...data, event_date: data.event_date || null },
+      token, row => entities.Review.create(row)),
+    // A captcha token works once; ask for a fresh one.
+    onSettled: () => { setToken(null); setCaptchaRound(n => n + 1); },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['reviews'] });
       setSubmitted(true);
@@ -168,10 +175,11 @@ export default function ReviewsPage() {
           </div>
 
           <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
+          <Captcha key={captchaRound} onToken={setToken} />
           {createMutation.isError && (
             <p className="text-sm font-body text-destructive">تعذّر إرسال التقييم. حاول مرة أخرى.</p>
           )}
-          <Button type="submit" disabled={!form.rating || createMutation.isPending} className="font-body gap-2">
+          <Button type="submit" disabled={!form.rating || createMutation.isPending || (!!captchaSiteKey() && !token)} className="font-body gap-2">
             <Send size={15} />
             {createMutation.isPending ? 'جارٍ الإرسال...' : 'إرسال التقييم'}
           </Button>

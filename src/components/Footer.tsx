@@ -9,7 +9,7 @@ export default function Footer() {
           rel="noopener noreferrer"
           className="hover:text-foreground transition-colors"
         >
-          Salhab Brothers
+          SalhabBrothers
         </a>
       </div>
     </footer>

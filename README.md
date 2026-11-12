@@ -142,7 +142,7 @@ Migrations only move forward. To undo a change, add a new migration that reverse
 
 ## Moving data from the old system
 
-`python3 -I scripts/csv-to-sql.py <folder with Booking_export.csv and BookingRequest_export.csv>` writes `data-export/import.sql` (gitignored, contains personal data); run it in the SQL Editor. Add `--replace` to wipe and re-import (only before cutover, because afterwards it would erase real data).
+`python3 -I scripts/csv-to-sql.py <folder with Booking_export.csv and BookingRequest_export.csv>` (we keep the old system's exports in `OldProject/exports/`, gitignored) writes `data-export/import.sql` inside that folder (gitignored, contains personal data); run it in the SQL Editor. Add `--replace` to wipe and re-import (only before cutover, because afterwards it would erase real data).
 
 ## Deploy
 

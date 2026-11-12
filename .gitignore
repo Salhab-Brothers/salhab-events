@@ -47,3 +47,6 @@ test-results/
 
 # agent worktrees and local tool state
 .claude/
+
+# local credentials and one-off SQL with passwords
+secrets/

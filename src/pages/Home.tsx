@@ -30,6 +30,11 @@ export default function Home() {
   // Requests and full booking rows are admin-only; visitors load public columns.
   // Re-created when the admin state changes, which re-runs the load effect below.
   const fetchData = useCallback(async () => {
+    // Offline: say so at once instead of waiting for the database client's retries to give up.
+    if (!navigator.onLine) {
+      setLoadError(true);
+      return;
+    }
     try {
       const [bList, rList] = await Promise.all([
         entities.Booking.list('-created_date', 1000, isAdmin ? '*' : PUBLIC_BOOKING_COLUMNS),

@@ -6,9 +6,14 @@ import pluginReactHooks from "eslint-plugin-react-hooks";
 import pluginUnusedImports from "eslint-plugin-unused-imports";
 
 export default tseslint.config(
-  { ignores: ["dist", "coverage", "node_modules", "OldProject", "data-export"] },
+  { ignores: ["dist", "dist-pwa", "coverage", "node_modules", "OldProject", "data-export", "secrets"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  {
+    // The service worker runs in its own global scope (self, caches, ...), not a window.
+    files: ["public/sw.js"],
+    languageOptions: { globals: { ...globals.serviceworker } },
+  },
   {
     files: ["src/**/*.{ts,tsx}", "vite.config.ts", "tailwind.config.ts"],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },

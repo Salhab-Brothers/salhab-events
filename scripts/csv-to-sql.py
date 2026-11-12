@@ -18,7 +18,9 @@ b = lambda s: 'true' if (s or '').strip().lower() == 'true' else 'false'
 slot = lambda s: 'lunch' if s == 'morning' else s  # legacy slot, same label in the app
 phone = lambda s: (s or '').lstrip("'")  # the old export prefixed some phones with a stray apostrophe
 ts = lambda s: q(s) + '::timestamptz' if s else 'now()'
-rd = lambda f: list(csv.DictReader(open(os.path.join(root, f), encoding='utf-8-sig')))
+def rd(f):
+    with open(os.path.join(root, f), encoding='utf-8-sig') as fh:
+        return list(csv.DictReader(fh))
 
 if replace:
     guard = "delete from public.bookings;\ndelete from public.booking_requests;"
@@ -34,5 +36,6 @@ for r in rd('BookingRequest_export.csv'):
         q(r['first_name']), q(r['second_name']), q(r['third_name']), q(r['last_name']), q(phone(r['phone'])), q(r['date']), q(slot(r['time_slot'])), q(r['event_name']), b(r['book_diwan']), q(r['status'] or 'pending'), ts(r['submitted_at']), ts(r['created_date'])))
 out.append("commit;")
 os.makedirs(os.path.join(root, 'data-export'), exist_ok=True)
-open(os.path.join(root, 'data-export', 'import.sql'), 'w', encoding='utf-8').write("\n".join(out) + "\n")
+with open(os.path.join(root, 'data-export', 'import.sql'), 'w', encoding='utf-8') as fh:
+    fh.write("\n".join(out) + "\n")
 print(len(out) - 3, 'inserts written')

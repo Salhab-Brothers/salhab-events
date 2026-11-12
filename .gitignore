@@ -39,3 +39,8 @@ OldProject/
 data-export/
 
 coverage/
+
+# e2e
+.env.e2e
+playwright-report/
+test-results/

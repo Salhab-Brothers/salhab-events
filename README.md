@@ -48,6 +48,17 @@ Booking requests and reviews are protected by a hidden field and review moderati
 
 With no site key set, forms insert directly as before (do not run the step 4 migration in that case).
 
+## End-to-end tests
+
+Real browser tests (Playwright) run against a throwaway copy of the backend in Docker built from the repo's own migrations, so they never touch production data. They cover requests and reviews through the captcha, moderation, admin login, and the privacy rules.
+
+- `npm run e2e:db`: start the local backend (first run downloads Docker images) and write `.env.e2e`.
+- `npm run e2e`: run all tests (starts the site and the `submit` function itself).
+- `npm run e2e:db:stop`: stop the local backend.
+- `E2E_BASE_URL=https://salhab-events.vercel.app npm run e2e:smoke`: read-only checks against the live site (no data written).
+
+Local tests use Cloudflare's public always-pass captcha keys. CI runs the same suite as the `e2e` job.
+
 ## Moving data from the old system
 
 `python3 -I scripts/csv-to-sql.py <folder with Booking_export.csv and BookingRequest_export.csv>` writes `data-export/import.sql` (gitignored, contains personal data); run it in the SQL Editor. Add `--replace` to wipe and re-import (only before cutover, because afterwards it would erase real data).

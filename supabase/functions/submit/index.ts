@@ -45,6 +45,7 @@ async function humanVerified(token: string, ip: string | null) {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+  if (req.method === 'GET') return reply({ ok: true }); // health check
   if (req.method !== 'POST') return reply({ error: 'method' }, 405);
 
   let input: { kind?: string; row?: Record<string, unknown>; token?: string };

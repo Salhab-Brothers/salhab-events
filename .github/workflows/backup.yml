@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Dump the public schema
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
@@ -26,6 +27,8 @@ jobs:
           docker run --rm -e SUPABASE_DB_URL postgres:17 sh -c 'pg_dump --no-owner --schema=public "$SUPABASE_DB_URL"' > backup.sql
           grep -q 'CREATE TABLE public.bookings' backup.sql || { echo "dump looks wrong"; exit 1; }
           echo "dump: $(wc -c < backup.sql) bytes, $(grep -c '^COPY ' backup.sql) tables with data"
+      - name: Prove the dump restores (scratch database, row counts must match)
+        run: scripts/verify-backup.sh backup.sql
       - name: Encrypt (the repository is public, so artifacts must never be plain)
         env:
           BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}

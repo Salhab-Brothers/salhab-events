@@ -11,6 +11,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": false,
     "isolatedModules": true,
+    "allowImportingTsExtensions": true,
     "skipLibCheck": true,
     "noEmit": true,
     "resolveJsonModule": true,
@@ -18,5 +19,8 @@
     "baseUrl": ".",
     "paths": { "@/*": ["./src/*"] }
   },
-  "include": ["src", "e2e", "vite.config.ts", "playwright.config.ts"]
+  "include": [
+    "src", "e2e", "vite.config.ts", "playwright.config.ts",
+    "supabase/functions/submit/validate.ts", "supabase/functions/submit/handler.ts", "supabase/functions/submit/*.test.ts"
+  ]
 }

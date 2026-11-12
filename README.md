@@ -48,6 +48,20 @@ Booking requests and reviews are protected by a hidden field and review moderati
 
 With no site key set, forms insert directly as before (do not run the step 4 migration in that case).
 
+### Hardening the function
+
+The `submit` function checks more than the captcha: it only answers browsers on the site's own addresses, refuses a token that was solved on a different site, validates every field (phone numbers need 7 to 15 digits), and writes with the project's secret key.
+
+- **Allowed origins:** `https://salhab-events.vercel.app`, `http://localhost:5173` and `http://localhost:5174` are built in. Add more (a custom domain, for example) with the secret `ALLOWED_ORIGINS`, comma separated. Requests with no `Origin` header (scripts, tests) are let through, because the captcha is what protects the function, not CORS; browsers always send `Origin` on a cross-site POST.
+- **Production setting to add:** `supabase secrets set TURNSTILE_EXPECTED_HOSTNAMES=salhab-events.vercel.app` (comma separated if the site has several addresses, for example a custom domain). When it is not set the hostname is not checked, which the local tests rely on, because Cloudflare's test keys report a fake hostname.
+- **Database key:** the function uses the `default` entry of `SUPABASE_SECRET_KEYS` when Supabase provides it and falls back to the older `SUPABASE_SERVICE_ROLE_KEY`.
+- **Redeploy to apply:** none of this changes until the function is deployed again. The function is now several files (`index.ts`, `handler.ts`, `validate.ts`), so deploy it with the Supabase CLI or the automated deploy rather than pasting a single file into the dashboard editor.
+- The logic lives in `handler.ts` and `validate.ts` and is unit tested with the rest of the project; `index.ts` only connects it to Deno.
+
+### Content Security Policy
+
+`vercel.json` sets a Content-Security-Policy: scripts only from the site and Cloudflare's captcha, connections only to the site and the Supabase project, no plugins, and no framing. `style-src` keeps `'unsafe-inline'` because the dropdown component injects a style element when it opens. If you add a service the site talks to (analytics, a new API, another font host), allow it in that header or the browser will block it; the console shows the blocked address.
+
 ## End-to-end tests
 
 Real browser tests (Playwright) run against a throwaway copy of the backend in Docker built from the repo's own migrations, so they never touch production data. They cover requests and reviews through the captcha, moderation, admin login, and the privacy rules.

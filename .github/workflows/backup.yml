@@ -1,0 +1,42 @@
+# Free Supabase projects have no automatic backups. This takes an encrypted copy of the
+# database twice a week and keeps it as a workflow artifact for 30 days.
+# Needs two repository secrets: SUPABASE_DB_URL (the "Session pooler" connection string,
+# runners cannot reach the direct IPv6 host) and BACKUP_PASSPHRASE.
+name: backup
+on:
+  schedule:
+    - cron: '30 3 * * 0,3'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dump:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Dump the public schema
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          test -n "$SUPABASE_DB_URL" || { echo "SUPABASE_DB_URL secret is not set"; exit 1; }
+          docker run --rm -e SUPABASE_DB_URL postgres:17 sh -c 'pg_dump --no-owner --schema=public "$SUPABASE_DB_URL"' > backup.sql
+          grep -q 'CREATE TABLE public.bookings' backup.sql || { echo "dump looks wrong"; exit 1; }
+          echo "dump: $(wc -c < backup.sql) bytes, $(grep -c '^COPY ' backup.sql) tables with data"
+      - name: Encrypt (the repository is public, so artifacts must never be plain)
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          test -n "$BACKUP_PASSPHRASE" || { echo "BACKUP_PASSPHRASE secret is not set"; exit 1; }
+          printf %s "$BACKUP_PASSPHRASE" > pass.txt
+          gpg --batch --yes --pinentry-mode loopback --passphrase-file pass.txt --symmetric --cipher-algo AES256 -o backup.sql.gpg backup.sql
+          # Prove it can be restored before trusting it.
+          gpg --batch --yes --pinentry-mode loopback --passphrase-file pass.txt -d backup.sql.gpg | cmp - backup.sql
+          shred -u pass.txt backup.sql
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: backup.sql.gpg
+          retention-days: 30
+          if-no-files-found: error

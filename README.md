@@ -59,6 +59,16 @@ Real browser tests (Playwright) run against a throwaway copy of the backend in D
 
 Local tests use Cloudflare's public always-pass captcha keys. CI runs the same suite as the `e2e` job.
 
+## Backups
+
+Free Supabase projects have no automatic backups, so `.github/workflows/backup.yml` exports the database (the `public` schema: bookings, requests, reviews, admins list) twice a week, encrypts it with GPG, and keeps it as a workflow artifact for 30 days. Admin logins are not in it: re-create them with the steps under "Admin accounts".
+
+Repository secrets it needs:
+- `SUPABASE_DB_URL`: Supabase dashboard, Connect, **Session pooler** connection string, with your database password filled in (the direct host is IPv6 only and GitHub runners cannot reach it).
+- `BACKUP_PASSPHRASE`: keep a copy in your password manager. Without it a backup cannot be opened.
+
+Run it once from the Actions tab to check it works. To restore: download the artifact, then `gpg -d backup.sql.gpg > backup.sql`, and run the SQL on an empty project (SQL Editor, or `psql`). Try a restore on a scratch project once, so you know it works before you need it.
+
 ## Moving data from the old system
 
 `python3 -I scripts/csv-to-sql.py <folder with Booking_export.csv and BookingRequest_export.csv>` writes `data-export/import.sql` (gitignored, contains personal data); run it in the SQL Editor. Add `--replace` to wipe and re-import (only before cutover, because afterwards it would erase real data).

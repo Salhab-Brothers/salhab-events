@@ -70,6 +70,60 @@ One-time setup:
 
 Run it once from the Actions tab to check it works. To restore: download the file from the bucket, `gpg -d db-....sql.gpg > backup.sql`, and run the SQL on an empty project (SQL Editor, or `psql`). Try a restore on a scratch project once, so you know it works before you need it.
 
+## Deploying the backend
+
+`.github/workflows/deploy-supabase.yml` keeps production Supabase in step with this repo, so the two cannot drift apart again (a grant that existed locally but not in production once broke the public forms). After a merge to `main` that changes `supabase/migrations/`, `supabase/functions/` or `supabase/config.toml` it:
+
+1. checks that production's migration history matches the repo (refuses to continue if not),
+2. applies the new migrations,
+3. deploys the `submit` function with the JWT check off (the public forms call it without a login),
+4. calls the live function without a captcha token and requires a 403, which proves it is deployed and reachable.
+
+From now on, change the database by adding a migration file in a PR, never by hand in the SQL Editor.
+
+### Secrets and settings (Settings, Secrets and variables, Actions)
+
+| Secret | Where to get it |
+|---|---|
+| `SUPABASE_DB_URL` | Already set for backups: the **Session pooler** string (Connect, with your database password). All database commands use it, which works from GitHub's IPv4-only runners. |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Already set for the keepalive job. Used for the final check. |
+| `SUPABASE_ACCESS_TOKEN` | New. https://supabase.com/dashboard/account/tokens, Generate new token, name it `github-deploy`, scope it to this project only and give it **Edge Functions** (write) permission. If the first run reports a missing permission, add **Projects** (read). |
+
+The function's own secrets (`TURNSTILE_SECRET`, and the optional `ALLOWED_ORIGINS` and `TURNSTILE_EXPECTED_HOSTNAMES` used by the hardened function) are set once in Supabase, Edge Functions, Secrets. The workflow never touches them.
+
+Optional approval step: Settings, Environments, `production`, tick **Required reviewers** and add yourself. Then each deploy and baseline waits for your approval. (The `production` environment is created by the first run if it does not exist.)
+
+### One-time baseline (before the first deploy)
+
+Production's four migrations were applied by hand, so its migration history is empty. A deploy would try to run them again, so the workflow refuses to deploy until you record them as applied:
+
+1. Add the `SUPABASE_ACCESS_TOKEN` secret.
+2. Actions, **deploy-supabase**, Run workflow, action **plan**. It lists what a deploy would do (all four migrations, which is expected before the baseline) and ends with an error saying production is not baselined. That error is the expected result of this first run.
+3. Run the workflow again with action **baseline** (it marks everything up to `20261112010000` as applied and changes no tables).
+4. Run **plan** again. It should now end green with "Remote database is up to date".
+
+After that, every merge that touches the paths above deploys itself. To deploy by hand, run the workflow with action **deploy**.
+
+### If the weekly check reports drift
+
+The weekly **plan** run fails when production and the repo disagree. Open the run: it names the versions.
+
+- "the database has migrations the repo does not have": someone changed production by hand or from another branch. Add the missing migration file to the repo (copy the SQL that was run) in a PR. If it is not a real change, see the repair note below.
+- "waiting migration is older than the newest applied one": a migration file was added with an old timestamp. Rename it with a new timestamp and merge.
+- "could not read production": check that `SUPABASE_DB_URL` is still valid (the database password may have been reset).
+
+Repair note: `npx supabase migration repair --status reverted <version> --remote="<url>" --yes` removes a wrongly recorded version from the history. It changes no tables.
+
+The check compares migration history only, not table contents. It will not notice a manual change that never went through a migration file.
+
+### Rolling back
+
+Migrations only move forward. To undo a change, add a new migration that reverses it and merge it. To undo a function change, revert the PR: the deploy runs again with the old code. A database backup (see Backups) is the last resort.
+
+### Checks you can run locally
+
+`scripts/migration-status.test.sh` (needs Docker) runs the history comparison against a throwaway database and checks every outcome: not baselined, in sync, one waiting, drift, history gap, unreadable.
+
 ## Moving data from the old system
 
 `python3 -I scripts/csv-to-sql.py <folder with Booking_export.csv and BookingRequest_export.csv>` writes `data-export/import.sql` (gitignored, contains personal data); run it in the SQL Editor. Add `--replace` to wipe and re-import (only before cutover, because afterwards it would erase real data).

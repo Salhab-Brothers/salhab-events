@@ -1,0 +1,149 @@
+# Keeps production Supabase in step with this repo: applies new migrations and deploys the
+# `submit` function after a merge to main, and checks weekly that nothing drifted.
+# Setup, secrets and the one-time baseline are described in README.md ("Deploying the backend").
+#
+# Database commands use the existing SUPABASE_DB_URL secret (the session pooler string, which
+# works from GitHub's IPv4-only runners). Only the function deploy needs SUPABASE_ACCESS_TOKEN.
+name: deploy-supabase
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/functions/**'
+      - 'supabase/config.toml'
+  schedule:
+    - cron: '23 5 * * 1'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'plan: report only. baseline: one-time, mark the hand-applied migrations as applied. deploy: apply and deploy now.'
+        type: choice
+        options: [plan, baseline, deploy]
+        default: plan
+      baseline_through:
+        description: 'baseline only: mark migrations up to and including this version as already applied'
+        type: string
+        default: '20261112010000'
+
+permissions:
+  contents: read
+
+# Two runs never touch production at the same time; a queued one waits.
+concurrency:
+  group: supabase-production
+  cancel-in-progress: false
+
+env:
+  PROJECT_REF: mlaqcrguenxybklahvqy
+  SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+  # Refuse an unencrypted connection to production (the CLI and psql both honour this).
+  PGSSLMODE: require
+
+jobs:
+  # Read-only: shows what a deploy would do, and fails when the repo and production disagree.
+  plan:
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.action == 'plan')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check the database secret is set
+        run: test -n "$SUPABASE_DB_URL" || { echo "::error::SUPABASE_DB_URL secret is not set"; exit 1; }
+      - name: Dry run of the deploy (applies nothing)
+        run: npx supabase db push --dry-run --skip-vault --remote="$SUPABASE_DB_URL"
+        continue-on-error: true
+      # A waiting migration (exit 10) is normal; a missing baseline, drift or no access fails the run.
+      - name: Compare migration history
+        run: |
+          scripts/migration-status.sh "$SUPABASE_DB_URL" && rc=0 || rc=$?
+          case "$rc" in
+            0|10) ;;
+            20) echo "::error::Production has no migration history. Run this workflow once with action=baseline."; exit 1 ;;
+            30) echo "::error::Production history and the repo disagree, see above (README, Deploying the backend)."; exit 1 ;;
+            *) echo "::error::Could not read production (exit $rc)."; exit 1 ;;
+          esac
+
+  # One-time: production's migrations were applied by hand, so its history table is empty.
+  # This records them as applied so that a deploy does not try to run them again.
+  baseline:
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'baseline'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check the database secret is set
+        run: test -n "$SUPABASE_DB_URL" || { echo "::error::SUPABASE_DB_URL secret is not set"; exit 1; }
+      - name: Mark the hand-applied migrations as applied
+        env:
+          THROUGH: ${{ inputs.baseline_through }}
+        run: |
+          versions=$(for f in supabase/migrations/[0-9]*_*.sql; do basename "$f" | cut -d_ -f1; done | sort | awk -v t="$THROUGH" '$1 <= t')
+          test -n "$versions" || { echo "::error::no migrations at or before $THROUGH"; exit 1; }
+          echo "marking as applied:"; echo "$versions"
+          mapfile -t list <<< "$versions"
+          npx supabase migration repair --status applied "${list[@]}" --remote="$SUPABASE_DB_URL" --yes
+      - name: Show the result
+        run: scripts/migration-status.sh "$SUPABASE_DB_URL"
+        continue-on-error: true
+
+  deploy:
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'deploy')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    # Add required reviewers under Settings, Environments, production to approve each deploy.
+    environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check the secrets are set
+        env:
+          SITE_URL: ${{ secrets.SUPABASE_URL }}
+          SITE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          for v in SUPABASE_DB_URL SUPABASE_ACCESS_TOKEN SITE_URL SITE_KEY; do
+            test -n "${!v}" || { echo "::error::secret for $v is not set"; exit 1; }
+          done
+      # Refuses to run when production has no history (not baselined) or has drifted.
+      - name: Check production is ready for new migrations
+        run: |
+          scripts/migration-status.sh "$SUPABASE_DB_URL" && rc=0 || rc=$?
+          case "$rc" in
+            0|10) ;;
+            20) echo "::error::Production has no migration history. Run this workflow once with action=baseline first."; exit 1 ;;
+            30) echo "::error::Production history and the repo disagree. Resolve the drift (README, Deploying the backend) before deploying."; exit 1 ;;
+            *) echo "::error::Could not read production (exit $rc)."; exit 1 ;;
+          esac
+      - name: Dry run (what would be applied)
+        run: npx supabase db push --dry-run --skip-vault --remote="$SUPABASE_DB_URL"
+      - name: Apply migrations
+        run: npx supabase db push --skip-vault --yes --remote="$SUPABASE_DB_URL"
+      - name: Deploy the submit function (JWT check off, the public forms call it without a login)
+        run: npx supabase functions deploy submit --no-verify-jwt --use-api --yes --remote="$PROJECT_REF"
+      # No token must be refused with 403. A 401 would mean the JWT check is still on; 404 means no function.
+      - name: Check the live function
+        env:
+          SITE_URL: ${{ secrets.SUPABASE_URL }}
+          SITE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 -X POST "$SITE_URL/functions/v1/submit" \
+            -H "apikey: $SITE_KEY" -H 'Content-Type: application/json' -d '{"kind":"review","row":{}}')
+          echo "submit without a captcha token answered HTTP $code"
+          test "$code" = 403

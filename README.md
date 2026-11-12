@@ -67,7 +67,7 @@ The `submit` function checks more than the captcha: it only answers browsers on 
 Real browser tests (Playwright) run against a throwaway copy of the backend in Docker built from the repo's own migrations, so they never touch production data. They cover requests and reviews through the captcha, moderation, admin login, and the privacy rules.
 
 - `npm run e2e:db`: start the local backend (first run downloads Docker images) and write `.env.e2e`.
-- `npm run e2e`: run all tests (starts the site and the `submit` function itself).
+- `npm run e2e`: run all tests (starts the site and the site's dev server). Projects: `chromium` and `mobile` (Pixel 7) run the accessibility checks in light and dark themes; `safari` and `iphone` (WebKit) run the behaviour specs. WebKit needs system libraries (`sudo npx playwright install-deps webkit`), so locally you can skip it with `npm run e2e -- --project=chromium --project=mobile`; CI installs them and runs everything.
 - `npm run e2e:db:stop`: stop the local backend.
 - `E2E_BASE_URL=https://salhab-events.vercel.app npm run e2e:smoke`: read-only checks against the live site (no data written).
 

@@ -19,6 +19,10 @@ export default defineConfig({
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     // A phone-sized browser for the checks that matter on small screens (most visitors are on phones).
     { name: 'mobile', use: { ...devices['Pixel 7'] }, testMatch: /(accessibility|smoke)\.spec\.ts/ },
+    // Safari's engine. The behaviour specs run here; accessibility is engine independent, so it stays on chromium.
+    // (It needs system libraries that only CI installs, see the install line in .github/workflows/ci.yml.)
+    { name: 'safari', use: { ...devices['Desktop Safari'] }, testMatch: /(public|admin|routing|smoke)\.spec\.ts/ },
+    { name: 'iphone', use: { ...devices['iPhone 15'] }, testMatch: /(smoke|routing)\.spec\.ts/ },
   ],
   // The local backend (npm run e2e:db) already serves the submit function.
   webServer: remote ? undefined : {

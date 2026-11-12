@@ -44,8 +44,9 @@
     --card-foreground: 36 25% 93%;
     --popover: 20 12% 11%;
     --popover-foreground: 36 25% 93%;
-    --primary: 183 70% 38%;
-    --primary-foreground: 0 0% 98%;
+    /* Lighter teal with dark text: white on the old 38% teal was about 3:1, below the 4.5:1 AA minimum. */
+    --primary: 183 65% 42%;
+    --primary-foreground: 20 14% 8%;
     --secondary: 20 12% 16%;
     --secondary-foreground: 36 25% 85%;
     --muted: 20 10% 15%;
@@ -56,7 +57,7 @@
     --destructive-foreground: 0 0% 98%;
     --border: 20 10% 20%;
     --input: 20 10% 20%;
-    --ring: 183 70% 38%;
+    --ring: 183 65% 42%;
 
     --booked-morning: 38 55% 45%;
     --booked-evening: 210 45% 38%;

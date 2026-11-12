@@ -19,14 +19,12 @@ describe('Logo', () => {
 });
 
 describe('Footer', () => {
-  it('links to LinkedIn and WhatsApp safely', () => {
+  it('links to the profile page safely', () => {
     render(<Footer />);
-    const links = screen.getAllByRole('link');
-    expect(links).toHaveLength(2);
-    links.forEach((a) => {
-      expect(a).toHaveAttribute('target', '_blank');
-      expect(a.getAttribute('rel')).toContain('noopener');
-    });
+    const link = screen.getByRole('link', { name: 'Salhab Brother' });
+    expect(link).toHaveAttribute('href', 'https://linktr.ee/SalhabBrothers');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link.getAttribute('rel')).toContain('noopener');
   });
 });
 

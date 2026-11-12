@@ -7,6 +7,7 @@ import { entities } from '@/api/api';
 import { TIME_SLOT_LABELS } from '@/lib/data';
 import { bookingsToCsv } from '@/lib/csv';
 import type { Booking, BookingRequest, RequestStatus } from '@/types';
+import { useDialog } from '@/components/useDialog';
 import AddBookingPage from './AddBookingPage';
 import ReviewModeration from '@/components/ReviewModeration';
 import DownloadEventsImage from '@/components/DownloadEventsImage';
@@ -44,6 +45,7 @@ interface AdminPageProps {
 export default function AdminPage({ bookings, requests, onRefresh, onEditBooking, editingBooking, onClearEdit, onLogout }: AdminPageProps) {
   const [tab, setTab] = useState<Tab>(editingBooking ? 'add-booking' : 'requests');
   const [loading, setLoading] = useState<string | null>(null);
+  const { confirm, notify, dialog } = useDialog();
 
   const pendingRequests = requests.filter(r => r.status === 'pending');
 
@@ -54,7 +56,7 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
       await action();
     } catch (err) {
       console.error('Admin action failed', err);
-      alert('تعذّر تنفيذ العملية. حاول مرة أخرى.');
+      await notify('تعذّر تنفيذ العملية. حاول مرة أخرى.');
     }
     setLoading(null);
     onRefresh();
@@ -76,9 +78,9 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
   const rejectRequest = (req: BookingRequest) => run(req.id + '-reject', () =>
     entities.BookingRequest.update(req.id, { status: 'rejected' }));
 
-  const deleteBooking = (booking: Booking) => {
-    if (!confirm(`هل تريد حذف "${booking.event_name}"؟`)) return;
-    return run(booking.id + '-delete', () => entities.Booking.delete(booking.id));
+  const deleteBooking = async (booking: Booking) => {
+    if (!(await confirm(`هل تريد حذف "${booking.event_name}"؟`))) return;
+    await run(booking.id + '-delete', () => entities.Booking.delete(booking.id));
   };
 
 
@@ -100,8 +102,9 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
         {TABS.map(t => (
           <button
             key={t.id}
+            aria-pressed={tab === t.id}
             onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-body font-medium transition-all
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-body font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
               ${tab === t.id ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
           >
             {t.label}
@@ -147,7 +150,7 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
                     <div className="flex items-center gap-1.5"><CalendarDays size={13} className="text-primary/60" />{formatFullDateStr(req.date)}</div>
                     <div className="flex items-center gap-1.5"><Clock size={13} className="text-primary/60" />{TIME_SLOT_LABELS[req.time_slot]}</div>
                   </div>
-                  <p className="text-xs font-body text-muted-foreground/60">
+                  <p className="text-xs font-body text-muted-foreground">
                     قُدِّم: {format(new Date(req.submitted_at), 'yyyy/MM/dd HH:mm')}
                   </p>
                 </div>
@@ -255,6 +258,7 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
                     className="h-8 w-8 text-muted-foreground hover:text-primary"
                     onClick={() => { onEditBooking(booking); setTab('add-booking'); }}
                     title="تعديل"
+                    aria-label={`تعديل ${booking.event_name}`}
                   >
                     <Pencil size={14} />
                   </Button>
@@ -264,6 +268,7 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
                     className="h-8 w-8 text-muted-foreground hover:text-destructive"
                     onClick={() => deleteBooking(booking)}
                     title="حذف"
+                    aria-label={`حذف ${booking.event_name}`}
                   >
                     <Trash2 size={14} />
                   </Button>
@@ -273,6 +278,7 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
           ))}
         </div>
       )}
+      {dialog}
     </div>
   );
 }

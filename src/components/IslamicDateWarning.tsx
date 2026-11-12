@@ -21,7 +21,7 @@ export default function IslamicDateWarning({ dateStr }: { dateStr: string }) {
         <p className="font-semibold">تنبيه: هذا اليوم مناسبة إسلامية</p>
         <ul className="mt-0.5 space-y-0.5">
           {events.map((ev, i) => (
-            <li key={i} className="opacity-90">— {ev.label}</li>
+            <li key={i} className="opacity-90">- {ev.label}</li>
           ))}
         </ul>
         <p className="mt-1 text-xs opacity-70">يمكنك المتابعة والحجز في هذا اليوم</p>

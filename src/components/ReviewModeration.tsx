@@ -1,12 +1,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Check, Trash2, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useDialog } from '@/components/useDialog';
 import { entities } from '@/api/api';
 import type { Review } from '@/types';
 
 export default function ReviewModeration() {
   const [reviews, setReviews] = useState<Review[] | null>(null);
   const [error, setError] = useState('');
+  const { confirm, dialog } = useDialog();
 
   const load = useCallback(async () => {
     try {
@@ -26,6 +28,10 @@ export default function ReviewModeration() {
       setError('تعذّر تنفيذ العملية');
     }
     load();
+  };
+
+  const remove = async (r: Review) => {
+    if (await confirm('حذف هذا التقييم؟')) await act(() => entities.Review.delete(r.id));
   };
 
   if (error && !reviews) return <p className="text-sm font-body text-destructive">{error}</p>;
@@ -54,12 +60,13 @@ export default function ReviewModeration() {
                 <Check size={14} /> قبول
               </Button>
             )}
-            <Button size="sm" variant="outline" onClick={() => confirm('حذف هذا التقييم؟') && act(() => entities.Review.delete(r.id))}>
+            <Button size="sm" variant="outline" aria-label={`حذف تقييم ${r.reviewer_name}`} onClick={() => remove(r)}>
               <Trash2 size={14} />
             </Button>
           </div>
         </div>
       ))}
+      {dialog}
     </div>
   );
 }

@@ -25,14 +25,14 @@ export default function SummaryBar({ bookings }: { bookings: Booking[] }) {
       icon: Clock,
       label: 'المناسبات القادمة',
       value: `${upcoming.length} مناسبة`,
-      color: 'text-amber-600 dark:text-amber-400',
+      color: 'text-amber-700 dark:text-amber-400',
       bg: 'bg-amber-50 dark:bg-amber-950/30',
     },
     {
       icon: CalendarDays,
       label: 'أقرب مناسبة',
       value: nextEvent
-        ? `${nextEvent.event_name} — ${format(parseISO(nextEvent.date), 'd MMMM', { locale: ar })}`
+        ? `${nextEvent.event_name} - ${format(parseISO(nextEvent.date), 'd MMMM', { locale: ar })}`
         : 'لا توجد مناسبات قادمة',
       color: 'text-blue-600 dark:text-blue-400',
       bg: 'bg-blue-50 dark:bg-blue-950/30',

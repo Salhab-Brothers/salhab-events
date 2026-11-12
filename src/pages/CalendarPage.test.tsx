@@ -9,6 +9,6 @@ describe('CalendarPage', () => {
     expect(screen.getByText('تقويم المناسبات')).toBeInTheDocument();
     expect(screen.getByText('إجمالي المحجوز')).toBeInTheDocument();
     expect(screen.getByText('اليوم كاملاً')).toBeInTheDocument(); // legend
-    expect(screen.getByText(/مناسبة المستقبل —/)).toBeInTheDocument();
+    expect(screen.getByText(/مناسبة المستقبل -/)).toBeInTheDocument();
   });
 });

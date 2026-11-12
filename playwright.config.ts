@@ -15,7 +15,11 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: { baseURL: remote ?? `http://localhost:${PORT}`, trace: 'retain-on-failure', locale: 'ar' },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    // A phone-sized browser for the checks that matter on small screens (most visitors are on phones).
+    { name: 'mobile', use: { ...devices['Pixel 7'] }, testMatch: /(accessibility|smoke)\.spec\.ts/ },
+  ],
   // The local backend (npm run e2e:db) already serves the submit function.
   webServer: remote ? undefined : {
     command: `npx vite --mode e2e --port ${PORT} --strictPort`,

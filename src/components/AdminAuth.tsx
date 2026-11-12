@@ -44,11 +44,14 @@ export default function AdminAuth() {
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="font-body text-sm font-medium">رقم الهاتف</Label>
+              <Label htmlFor="admin-phone" className="font-body text-sm font-medium">رقم الهاتف</Label>
               <div className="relative">
-                <Phone size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Phone size={15} aria-hidden="true" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  id="admin-phone"
                   type="tel"
+                  inputMode="tel"
+                  autoComplete="username"
                   placeholder="05xxxxxxxx"
                   value={phone}
                   onChange={e => { setPhone(e.target.value); setError(''); }}
@@ -59,12 +62,20 @@ export default function AdminAuth() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="font-body text-sm font-medium">كلمة المرور</Label>
+              <Label htmlFor="admin-password" className="font-body text-sm font-medium">كلمة المرور</Label>
               <div className="relative">
-                <button type="button" onClick={() => setShowPw(v => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                  {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                <button
+                  type="button"
+                  onClick={() => setShowPw(v => !v)}
+                  aria-label={showPw ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                  aria-pressed={showPw}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 rounded text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {showPw ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}
                 </button>
                 <Input
+                  id="admin-password"
+                  autoComplete="current-password"
                   type={showPw ? 'text' : 'password'}
                   placeholder="••••••••"
                   value={password}

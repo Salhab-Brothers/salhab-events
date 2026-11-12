@@ -36,7 +36,6 @@ const props = () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(window.confirm).mockReturnValue(true);
   vi.spyOn(console, 'error').mockImplementation(() => {});
   Booking.create.mockResolvedValue(undefined);
   Booking.delete.mockResolvedValue(undefined);
@@ -90,8 +89,12 @@ describe('AdminPage requests', () => {
     const p = { ...props(), requests: [makeRequest()] };
     render(<AdminPage {...p} />);
     await userEvent.click(screen.getByText('رفض'));
-    await waitFor(() => expect(window.alert).toHaveBeenCalledWith('تعذّر تنفيذ العملية. حاول مرة أخرى.'));
-    expect(p.onRefresh).toHaveBeenCalled();
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('تعذّر تنفيذ العملية. حاول مرة أخرى.');
+    expect(p.onRefresh).not.toHaveBeenCalled();   // refreshes once the admin has read it
+    await userEvent.click(screen.getByRole('button', { name: 'حسناً' }));
+    await waitFor(() => expect(p.onRefresh).toHaveBeenCalled());
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('shows progress on the approve button while working', async () => {
@@ -153,17 +156,20 @@ describe('AdminPage bookings', () => {
     const p = { ...props(), bookings: [twoBookings[1]] };
     render(<AdminPage {...p} />);
     await goTo('الحجوزات');
-    await userEvent.click(screen.getByTitle('حذف'));
+    await userEvent.click(screen.getByRole('button', { name: /^حذف/ }));
+    expect(screen.getByRole('dialog')).toHaveTextContent(/هل تريد حذف/);
+    await userEvent.click(screen.getByRole('button', { name: 'تأكيد' }));
     await waitFor(() => expect(Booking.delete).toHaveBeenCalledWith('b1'));
     expect(p.onRefresh).toHaveBeenCalled();
   });
 
   it('keeps the booking when the admin declines', async () => {
-    vi.mocked(window.confirm).mockReturnValue(false);
     const p = { ...props(), bookings: [twoBookings[1]] };
     render(<AdminPage {...p} />);
     await goTo('الحجوزات');
-    await userEvent.click(screen.getByTitle('حذف'));
+    await userEvent.click(screen.getByRole('button', { name: /^حذف/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'إلغاء' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(Booking.delete).not.toHaveBeenCalled();
     expect(p.onRefresh).not.toHaveBeenCalled();
   });

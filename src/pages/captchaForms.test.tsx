@@ -30,11 +30,11 @@ afterEach(() => vi.unstubAllEnvs());
 describe('captcha on the booking request form', () => {
   it('blocks sending until solved, then sends through the verifying function', async () => {
     const { container } = renderWithQuery(<RequestPage />);
-    await userEvent.type(screen.getByPlaceholderText('الاسم الأول'), 'خالد');
-    await userEvent.type(screen.getByPlaceholderText('اسم العائلة'), 'سلهب');
-    await userEvent.type(screen.getByPlaceholderText('05xxxxxxxx'), '0501234567');
+    await userEvent.type(screen.getByLabelText('الاسم الأول'), 'خالد');
+    await userEvent.type(screen.getByLabelText('اسم العائلة'), 'سلهب');
+    await userEvent.type(screen.getByLabelText(/رقم الهاتف/), '0501234567');
     fireEvent.change(container.querySelector('input[type="date"]')!, { target: { value: '2099-07-01' } });
-    await userEvent.type(screen.getByPlaceholderText('مثال: عرس، خطبة، تجمع عائلي'), 'عرس');
+    await userEvent.type(screen.getByLabelText(/اسم المناسبة/), 'عرس');
 
     const send = screen.getByRole('button', { name: /إرسال/ });
     expect(send).toBeDisabled();
@@ -51,7 +51,7 @@ describe('captcha on the booking request form', () => {
 describe('captcha on the review form', () => {
   it('blocks sending until solved, then sends through the verifying function', async () => {
     renderWithQuery(<ReviewsPage />);
-    await userEvent.type(screen.getByPlaceholderText('الاسم الكامل'), 'سارة');
+    await userEvent.type(screen.getByLabelText(/اسمك/), 'سارة');
     await userEvent.click(document.querySelectorAll('form button[type="button"]')[4]);
 
     const send = screen.getByRole('button', { name: /إرسال التقييم/ });

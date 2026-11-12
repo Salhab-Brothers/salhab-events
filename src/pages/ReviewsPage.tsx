@@ -27,13 +27,15 @@ function StarDisplay({ value }: { value: number }) {
 /** Clickable stars for choosing a rating. */
 function StarInput({ value, onChange }: { value: number; onChange: (rating: number) => void }) {
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-1" role="group" aria-labelledby="review-rating-heading">
       {[1, 2, 3, 4, 5].map(s => (
         <button
           key={s}
           type="button"
+          aria-label={`${s} من 5`}
+          aria-pressed={s === value}
           onClick={() => onChange(s)}
-          className="transition-all hover:scale-110 cursor-pointer"
+          className="rounded transition-all hover:scale-110 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Star size={28} className={starClass(s <= value)} />
         </button>
@@ -100,7 +102,7 @@ export default function ReviewsPage() {
       {reviews.length > 0 && (
         <div className="bg-card border border-border/50 rounded-2xl p-5 mb-6 flex items-center gap-6 shadow-sm">
           <div className="text-center">
-            <p className="font-heading font-bold text-4xl text-amber-500">{avgRating.toFixed(1)}</p>
+            <p className="font-heading font-bold text-4xl text-amber-700">{avgRating.toFixed(1)}</p>
             <StarDisplay value={Math.round(avgRating)} />
             <p className="text-xs font-body text-muted-foreground mt-1">{reviews.length} تقييم</p>
           </div>
@@ -137,8 +139,9 @@ export default function ReviewsPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="font-body text-sm font-medium">اسمك *</Label>
+              <Label htmlFor="review-name" className="font-body text-sm font-medium">اسمك *</Label>
               <Input
+                id="review-name"
                 required
                 placeholder="الاسم الكامل"
                 value={form.reviewer_name}
@@ -147,8 +150,9 @@ export default function ReviewsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="font-body text-sm font-medium">اسم المناسبة</Label>
+              <Label htmlFor="review-event" className="font-body text-sm font-medium">اسم المناسبة</Label>
               <Input
+                id="review-event"
                 placeholder="اختياري"
                 value={form.event_name}
                 onChange={e => setForm(f => ({ ...f, event_name: e.target.value }))}
@@ -158,14 +162,15 @@ export default function ReviewsPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label className="font-body text-sm font-medium">التقييم *</Label>
+            <p id="review-rating-heading" className="font-body text-sm font-medium">التقييم *</p>
             <StarInput value={form.rating} onChange={v => setForm(f => ({ ...f, rating: v }))} />
             {!form.rating && <p className="text-xs text-muted-foreground font-body">اختر عدد النجوم</p>}
           </div>
 
           <div className="space-y-1.5">
-            <Label className="font-body text-sm font-medium">تعليقك (اختياري)</Label>
+            <Label htmlFor="review-comment" className="font-body text-sm font-medium">تعليقك (اختياري)</Label>
             <Textarea
+              id="review-comment"
               placeholder="شاركنا تجربتك..."
               value={form.comment}
               onChange={e => setForm(f => ({ ...f, comment: e.target.value }))}
@@ -197,7 +202,7 @@ export default function ReviewsPage() {
               </div>
               <div className="flex flex-col items-end gap-1">
                 <StarDisplay value={r.rating} />
-                <p className="text-xs font-body text-muted-foreground/60">
+                <p className="text-xs font-body text-muted-foreground">
                   {format(new Date(r.created_date), 'd MMM yyyy', { locale: ar })}
                 </p>
               </div>
@@ -206,7 +211,7 @@ export default function ReviewsPage() {
           </div>
         ))}
         {reviews.length === 0 && (
-          <p className="text-center font-body text-muted-foreground py-10">لا توجد تقييمات بعد — كن أول من يقيّم!</p>
+          <p className="text-center font-body text-muted-foreground py-10">لا توجد تقييمات بعد - كن أول من يقيّم!</p>
         )}
       </div>
     </div>

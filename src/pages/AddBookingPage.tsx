@@ -9,6 +9,7 @@ import { entities } from '@/api/api';
 import IslamicDateWarning from '@/components/IslamicDateWarning';
 import ConflictDialog from '@/components/ConflictDialog';
 import { BOOKABLE_SLOTS, normalizeSlot } from '@/lib/data';
+import { isValidPhone, PHONE_ERROR } from '@/lib/phone';
 import type { Booking, BookingInput } from '@/types';
 
 
@@ -40,6 +41,7 @@ export default function AddBookingPage({ bookings, onBookingAdded, editingBookin
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [phoneError, setPhoneError] = useState(false);
   const [conflicts, setConflicts] = useState<Booking[] | null>(null); // null = no modal
 
   const set = <K extends keyof BookingInput>(key: K, val: BookingInput[K]) => setForm(f => ({ ...f, [key]: val }));
@@ -85,6 +87,7 @@ export default function AddBookingPage({ bookings, onBookingAdded, editingBookin
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!isValidPhone(form.phone)) { setPhoneError(true); return; }
     const found = findConflicts();
     if (found.length > 0) {
       setConflicts(found);
@@ -105,8 +108,9 @@ export default function AddBookingPage({ bookings, onBookingAdded, editingBookin
       <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div className="space-y-1.5">
-            <Label className="font-body text-sm font-medium">التاريخ *</Label>
+            <Label htmlFor="add-date" className="font-body text-sm font-medium">التاريخ *</Label>
             <Input
+              id="add-date"
               type="date"
               required
               value={form.date}
@@ -116,14 +120,15 @@ export default function AddBookingPage({ bookings, onBookingAdded, editingBookin
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="font-body text-sm font-medium">الوقت *</Label>
-            <div className="flex gap-2 flex-wrap">
+            <p id="add-slot-heading" className="font-body text-sm font-medium">الوقت *</p>
+            <div role="group" aria-labelledby="add-slot-heading" className="flex gap-2 flex-wrap">
               {BOOKABLE_SLOTS.map(s => (
                 <button
                   key={s.value}
                   type="button"
+                  aria-pressed={form.time_slot === s.value}
                   onClick={() => { set('time_slot', s.value); setConflicts(null); }}
-                  className={`flex-1 min-w-[80px] text-xs sm:text-sm py-2 px-3 rounded-lg border font-body font-medium transition-all
+                  className={`flex-1 min-w-[80px] text-xs sm:text-sm py-2 px-3 rounded-lg border font-body font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
                     ${form.time_slot === s.value
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
@@ -137,8 +142,9 @@ export default function AddBookingPage({ bookings, onBookingAdded, editingBookin
         </div>
 
         <div className="space-y-1.5">
-          <Label className="font-body text-sm font-medium">اسم المناسبة *</Label>
+          <Label htmlFor="add-event" className="font-body text-sm font-medium">اسم المناسبة *</Label>
           <Input
+            id="add-event"
             required
             placeholder="مثال: عرس أبو محمد، تجمع آل سلهب"
             value={form.event_name}
@@ -149,8 +155,9 @@ export default function AddBookingPage({ bookings, onBookingAdded, editingBookin
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div className="space-y-1.5">
-            <Label className="font-body text-sm font-medium">اسم الشخص المسؤول *</Label>
+            <Label htmlFor="add-person" className="font-body text-sm font-medium">اسم الشخص المسؤول *</Label>
             <Input
+              id="add-person"
               required
               placeholder="الاسم الكامل"
               value={form.person_name}
@@ -159,15 +166,22 @@ export default function AddBookingPage({ bookings, onBookingAdded, editingBookin
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="font-body text-sm font-medium">رقم الهاتف *</Label>
+            <Label htmlFor="add-phone" className="font-body text-sm font-medium">رقم الهاتف *</Label>
             <Input
+              id="add-phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="off"
               required
               placeholder="05xxxxxxxx"
               value={form.phone}
-              onChange={e => set('phone', e.target.value)}
+              onChange={e => { set('phone', e.target.value); setPhoneError(false); }}
+              aria-invalid={phoneError}
+              aria-describedby={phoneError ? 'add-phone-error' : undefined}
               className="font-body"
               dir="ltr"
             />
+            {phoneError && <p id="add-phone-error" role="alert" className="text-sm font-body text-destructive">{PHONE_ERROR}</p>}
           </div>
         </div>
 
@@ -181,13 +195,14 @@ export default function AddBookingPage({ bookings, onBookingAdded, editingBookin
             className="w-5 h-5 accent-primary cursor-pointer"
           />
           <label htmlFor="book_diwan" className="font-body text-sm font-medium cursor-pointer select-none">
-            ✅ احجز الديوان — <span className="text-muted-foreground font-normal">يشمل الحجز ديوان آل سلهب</span>
+            ✅ احجز الديوان - <span className="text-muted-foreground font-normal">يشمل الحجز ديوان آل سلهب</span>
           </label>
         </div>
 
         <div className="space-y-1.5">
-          <Label className="font-body text-sm font-medium">ملاحظات (اختياري)</Label>
+          <Label htmlFor="add-notes" className="font-body text-sm font-medium">ملاحظات (اختياري)</Label>
           <Textarea
+            id="add-notes"
             placeholder="أي تفاصيل إضافية..."
             value={form.notes}
             onChange={e => set('notes', e.target.value)}

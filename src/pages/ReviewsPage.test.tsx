@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@/test/user';
 import { renderWithQuery } from '@/test/render';
 import { makeReview } from '@/test/factories';
@@ -47,9 +47,9 @@ describe('ReviewsPage', () => {
     const submit = screen.getByRole('button', { name: /إرسال/ });
     expect(submit).toBeDisabled();
 
-    await userEvent.type(screen.getAllByPlaceholderText('الاسم الكامل')[0], 'منى');
-    await userEvent.type(screen.getByPlaceholderText('اختياري'), 'خطبة');
-    await userEvent.type(screen.getByPlaceholderText('شاركنا تجربتك...'), 'جميل');
+    await userEvent.type(screen.getByLabelText(/اسمك/), 'منى');
+    await userEvent.type(screen.getByLabelText(/اسم المناسبة/), 'خطبة');
+    await userEvent.type(screen.getByLabelText(/تعليقك/), 'جميل');
     await rate(4);
     expect(submit).toBeEnabled();
     await userEvent.click(submit);
@@ -58,14 +58,14 @@ describe('ReviewsPage', () => {
       reviewer_name: 'منى', event_name: 'خطبة', rating: 4, comment: 'جميل', event_date: null,
     }));
     expect(await screen.findByText(/سيظهر بعد مراجعة الإدارة/)).toBeInTheDocument();
-    expect(screen.getAllByPlaceholderText('الاسم الكامل')[0]).toHaveValue('');
+    expect(screen.getByLabelText(/اسمك/)).toHaveValue('');
   });
 
   it('reports a failed submission', async () => {
     Review.create.mockRejectedValue(new Error('x'));
     renderWithQuery(<ReviewsPage />);
     await screen.findByText(/كن أول/);
-    await userEvent.type(screen.getAllByPlaceholderText('الاسم الكامل')[0], 'منى');
+    await userEvent.type(screen.getByLabelText(/اسمك/), 'منى');
     await rate(5);
     await userEvent.click(screen.getByRole('button', { name: /إرسال/ }));
     expect(await screen.findByText('تعذّر إرسال التقييم. حاول مرة أخرى.')).toBeInTheDocument();
@@ -74,7 +74,7 @@ describe('ReviewsPage', () => {
   it('drops bot submissions that fill the honeypot', async () => {
     const { container } = renderWithQuery(<ReviewsPage />);
     await screen.findByText(/كن أول/);
-    await userEvent.type(screen.getAllByPlaceholderText('الاسم الكامل')[0], 'بوت');
+    await userEvent.type(screen.getByLabelText(/اسمك/), 'بوت');
     await userEvent.type(container.querySelector('input[name="website"]')!, 'spam');
     await rate(5);
     await userEvent.click(screen.getByRole('button', { name: /إرسال/ }));
@@ -85,7 +85,7 @@ describe('ReviewsPage', () => {
   it('does not submit without a rating even if the form is submitted directly', async () => {
     const { container } = renderWithQuery(<ReviewsPage />);
     await screen.findByText(/كن أول/);
-    await userEvent.type(screen.getAllByPlaceholderText('الاسم الكامل')[0], 'منى');
+    await userEvent.type(screen.getByLabelText(/اسمك/), 'منى');
     container.querySelector('form')!.requestSubmit();
     expect(Review.create).not.toHaveBeenCalled();
   });
@@ -96,5 +96,16 @@ describe('ReviewsPage', () => {
     await screen.findByText('سارة');
     expect(document.querySelector('.space-y-3 button')).toBeNull();
     expect(screen.getAllByRole('img', { name: '3 / 5' }).length).toBeGreaterThan(0);
+  });
+
+  it('lets the rating be chosen by name, and announces which star is selected', async () => {
+    renderWithQuery(<ReviewsPage />);
+    await screen.findByText(/كن أول/);
+    const group = screen.getByRole('group', { name: /التقييم/ });
+    const four = within(group).getByRole('button', { name: '4 من 5' });
+    expect(four).toHaveAttribute('aria-pressed', 'false');
+    await userEvent.click(four);
+    expect(four).toHaveAttribute('aria-pressed', 'true');
+    expect(within(group).getByRole('button', { name: '5 من 5' })).toHaveAttribute('aria-pressed', 'false');
   });
 });

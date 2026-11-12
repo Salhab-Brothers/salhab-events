@@ -10,8 +10,8 @@ import AdminAuth from './AdminAuth';
 beforeEach(() => vi.clearAllMocks());
 
 const fill = async (phone: string, password: string) => {
-  await userEvent.type(screen.getByPlaceholderText('05xxxxxxxx'), phone);
-  await userEvent.type(screen.getByPlaceholderText('••••••••'), password);
+  await userEvent.type(screen.getByLabelText(/رقم الهاتف/), phone);
+  await userEvent.type(screen.getByLabelText('كلمة المرور'), password);
 };
 
 describe('AdminAuth', () => {
@@ -30,9 +30,9 @@ describe('AdminAuth', () => {
     await fill('0501234567', 'wrong');
     await userEvent.click(screen.getByRole('button', { name: 'دخول' }));
     expect(await screen.findByText('رقم الهاتف أو كلمة المرور غير صحيحة')).toBeInTheDocument();
-    await userEvent.type(screen.getByPlaceholderText('••••••••'), 'x');
+    await userEvent.type(screen.getByLabelText('كلمة المرور'), 'x');
     expect(screen.queryByText(/غير صحيحة/)).toBeNull();
-    await userEvent.type(screen.getByPlaceholderText('05xxxxxxxx'), '1');
+    await userEvent.type(screen.getByLabelText(/رقم الهاتف/), '1');
     expect(screen.queryByText(/غير صحيحة/)).toBeNull();
   });
 
@@ -49,7 +49,7 @@ describe('AdminAuth', () => {
 
   it('toggles password visibility', async () => {
     render(<AdminAuth />);
-    const pw = screen.getByPlaceholderText('••••••••');
+    const pw = screen.getByLabelText('كلمة المرور');
     expect(pw).toHaveAttribute('type', 'password');
     const toggle = pw.parentElement!.querySelector('button[type="button"]')!;
     await userEvent.click(toggle);

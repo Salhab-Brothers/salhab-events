@@ -61,16 +61,18 @@ describe('ReviewModeration', () => {
     Review.list.mockResolvedValue([approved]);
     render(<ReviewModeration />);
     await screen.findByText('مقبول');
-    await userEvent.click(screen.getAllByRole('button')[0]);
+    await userEvent.click(screen.getByRole('button', { name: /^حذف تقييم/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'تأكيد' }));
     await waitFor(() => expect(Review.delete).toHaveBeenCalledWith('a'));
   });
 
   it('does not delete when the admin cancels', async () => {
-    vi.mocked(window.confirm).mockReturnValueOnce(false);
     Review.list.mockResolvedValue([approved]);
     render(<ReviewModeration />);
     await screen.findByText('مقبول');
-    await userEvent.click(screen.getAllByRole('button')[0]);
+    await userEvent.click(screen.getByRole('button', { name: /^حذف تقييم/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'إلغاء' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(Review.delete).not.toHaveBeenCalled();
   });
 

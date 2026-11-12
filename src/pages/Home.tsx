@@ -9,6 +9,7 @@ import ReviewsPage from './ReviewsPage';
 import { useTheme } from '@/lib/theme';
 import { entities, PUBLIC_BOOKING_COLUMNS } from '@/api/api';
 import { useIsAdmin, signOutAdmin } from '@/lib/adminSession';
+import { pageFromHash, pageHash } from '@/lib/route';
 import type { Booking, BookingRequest, PageId } from '@/types';
 
 // Heavy, rarely-used pages (charts, image export) load on demand.
@@ -17,7 +18,8 @@ const StatsPage = lazy(() => import('./StatsPage'));
 
 export default function Home() {
   const { theme, toggle } = useTheme();
-  const [activePage, setActivePage] = useState<PageId>('calendar');
+  // The page lives in the URL hash (#/reviews), so reload, back and shared links work.
+  const [activePage, setActivePage] = useState<PageId>(() => pageFromHash(window.location.hash));
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [requests, setRequests] = useState<BookingRequest[]>([]);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
@@ -46,11 +48,23 @@ export default function Home() {
     fetchData().then(() => setInitialized(true));
   }, [fetchData]);
 
-  const handlePageChange = (page: PageId) => {
+  const showPage = useCallback((page: PageId) => {
     setEditingBooking(null);
     setActivePage(page);
     // Fresh data when returning to the public listings
     if (page === 'calendar' || page === 'events') fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    const onHashChange = () => showPage(pageFromHash(window.location.hash));
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, [showPage]);
+
+  const handlePageChange = (page: PageId) => {
+    // A new hash triggers showPage through the listener above; the same page just refreshes.
+    if (window.location.hash === pageHash(page)) showPage(page);
+    else window.location.hash = pageHash(page);
   };
 
   const handleEditBooking = (booking: Booking) => {
@@ -98,7 +112,7 @@ export default function Home() {
             onEditBooking={handleEditBooking}
             editingBooking={editingBooking}
             onClearEdit={() => setEditingBooking(null)}
-            onLogout={() => { signOutAdmin(); setActivePage('calendar'); }}
+            onLogout={() => { signOutAdmin(); handlePageChange('calendar'); }}
           />
         );
     }

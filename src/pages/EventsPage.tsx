@@ -44,8 +44,9 @@ const SLOT_FILTERS = [
 const PillButton = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) => (
   <button
     type="button"
+    aria-pressed={active}
     onClick={onClick}
-    className={`px-3 py-1.5 rounded-full text-xs font-body font-medium border transition-all whitespace-nowrap
+    className={`px-3 py-1.5 rounded-full text-xs font-body font-medium border transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
       ${active
         ? 'bg-primary text-primary-foreground border-primary'
         : 'bg-card border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
@@ -119,6 +120,7 @@ export default function EventsPage({ bookings }: { bookings: Booking[] }) {
         <div className="relative flex-1 min-w-[200px]">
           <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
+            aria-label="ابحث عن حجز"
             placeholder="🔍 ابحث عن حجز..."
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -126,7 +128,7 @@ export default function EventsPage({ bookings }: { bookings: Booking[] }) {
           />
         </div>
         <Select value={filterMonth} onValueChange={setFilterMonth}>
-          <SelectTrigger className="w-40 font-body">
+          <SelectTrigger aria-label="الشهر" className="w-40 font-body">
             <SelectValue placeholder="الشهر" />
           </SelectTrigger>
           <SelectContent>
@@ -139,7 +141,7 @@ export default function EventsPage({ bookings }: { bookings: Booking[] }) {
           </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-36 font-body">
+          <SelectTrigger aria-label="الحالة" className="w-36 font-body">
             <SelectValue placeholder="الحالة" />
           </SelectTrigger>
           <SelectContent>

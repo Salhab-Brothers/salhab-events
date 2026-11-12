@@ -138,7 +138,7 @@ export default function DownloadEventsImage({ bookings, onRefresh }: DownloadEve
             أفراح آل سلهب
           </h1>
           <p style={{ fontSize: '18px', color: '#8a7060', margin: 0 }}>
-            جدول المناسبات القادمة — {today.getDate()} {LEVANTINE_MONTHS[today.getMonth()]}، {today.getMonth() + 1} / {today.getFullYear()}
+            جدول المناسبات القادمة - {today.getDate()} {LEVANTINE_MONTHS[today.getMonth()]}، {today.getMonth() + 1} / {today.getFullYear()}
           </p>
         </div>
 
@@ -172,7 +172,7 @@ export default function DownloadEventsImage({ bookings, onRefresh }: DownloadEve
                     <td style={{ padding: '12px 16px', fontSize: '17px', color: '#5a3e2a', borderBottom: '2px solid #e8d8c0', whiteSpace: 'nowrap', direction: 'ltr', textAlign: 'right' }}>{format(d, 'dd/MM/yyyy')}</td>
                     <td style={{ padding: '12px 16px', fontSize: '18px', fontWeight: '700', color: '#1a2a2a', borderBottom: '2px solid #e8d8c0' }}>{b.event_name}</td>
                     <td style={{ padding: '12px 16px', fontSize: '16px', color: (b.time_slot === 'lunch' || b.time_slot === 'morning') ? '#a05a00' : b.time_slot === 'afternoon' ? '#1e40af' : b.time_slot === 'full' ? '#991b1b' : '#5b21b6', borderBottom: '2px solid #e8d8c0', whiteSpace: 'nowrap', fontWeight: '600' }}>{TIME_SLOT_LABELS[b.time_slot]}</td>
-                    <td style={{ padding: '12px 16px', fontSize: '18px', textAlign: 'center', borderBottom: '2px solid #e8d8c0' }}>{b.book_diwan ? '✅' : '—'}</td>
+                    <td style={{ padding: '12px 16px', fontSize: '18px', textAlign: 'center', borderBottom: '2px solid #e8d8c0' }}>{b.book_diwan ? '✅' : '-'}</td>
                   </tr>
                 );
               })}
@@ -183,7 +183,7 @@ export default function DownloadEventsImage({ bookings, onRefresh }: DownloadEve
         {/* Footer */}
         <div style={{ textAlign: 'center', marginTop: '32px', paddingTop: '20px', borderTop: '2px solid #c8a96e' }}>
           <p style={{ fontSize: '14px', color: '#a08060', margin: 0 }}>
-            نظام حجوزات آل سلهب — تم الإنشاء بتاريخ {format(today, 'yyyy/MM/dd')}
+            نظام حجوزات آل سلهب - تم الإنشاء بتاريخ {format(today, 'yyyy/MM/dd')}
           </p>
         </div>
       </div>

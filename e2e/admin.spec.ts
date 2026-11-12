@@ -7,8 +7,8 @@ test.beforeEach(resetData);
 test('wrong password is refused, right password opens the admin panel', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'الإدارة' }).first().click();
-  await page.getByPlaceholder('05xxxxxxxx').fill(ADMIN_PHONE);
-  await page.getByPlaceholder('••••••••').fill('wrong-password');
+  await page.getByLabel('رقم الهاتف').fill(ADMIN_PHONE);
+  await page.getByLabel('كلمة المرور', { exact: true }).fill('wrong-password');
   await page.getByRole('button', { name: 'دخول' }).click();
   await expect(page.getByText('رقم الهاتف أو كلمة المرور غير صحيحة')).toBeVisible();
 

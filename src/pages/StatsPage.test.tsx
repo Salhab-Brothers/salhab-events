@@ -31,7 +31,7 @@ describe('StatsPage', () => {
   it('shows empty states without bookings', () => {
     render(<StatsPage bookings={[]} />);
     expect(screen.getAllByText('لا توجد بيانات')).toHaveLength(3);
-    expect(card('الوقت الأكثر حجزاً')).toHaveTextContent('—');
+    expect(card('الوقت الأكثر حجزاً')).toHaveTextContent('-');
     expect(card('إجمالي الحجوزات')).toHaveTextContent('0');
   });
 

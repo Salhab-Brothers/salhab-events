@@ -8,6 +8,7 @@ import { entities } from '@/api/api';
 import IslamicDateWarning from '@/components/IslamicDateWarning';
 import Captcha from '@/components/Captcha';
 import { honeypotTripped } from '@/lib/honeypot';
+import { isValidPhone, PHONE_ERROR } from '@/lib/phone';
 import { captchaSiteKey, sendPublic } from '@/lib/publicSubmit';
 import { BOOKABLE_SLOTS } from '@/lib/data';
 import type { BookingRequest } from '@/types';
@@ -40,6 +41,7 @@ export default function RequestPage() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [phoneError, setPhoneError] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [captchaRound, setCaptchaRound] = useState(0);
 
@@ -50,6 +52,7 @@ export default function RequestPage() {
     setError('');
     // Honeypot: real visitors never see or fill this field; bots do.
     if (honeypotTripped(e.currentTarget)) { setSubmitted(true); return; }
+    if (!isValidPhone(form.phone)) { setPhoneError(true); return; }
     setLoading(true);
     try {
       await sendPublic('request', {
@@ -101,13 +104,14 @@ export default function RequestPage() {
 
       <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm space-y-5">
         {/* Name fields */}
-        <div>
-          <Label className="font-body text-sm font-medium mb-3 block">الاسم الرباعي *</Label>
+        <div role="group" aria-labelledby="req-name-heading">
+          <p id="req-name-heading" className="font-body text-sm font-medium mb-3">الاسم الرباعي *</p>
           <div className="grid grid-cols-2 gap-3">
             {NAME_FIELDS.map(({ key, label }) => (
               <div key={key} className="space-y-1">
-                <Label className="font-body text-xs text-muted-foreground">{label}</Label>
+                <Label htmlFor={`req-${key}`} className="font-body text-xs text-muted-foreground">{label}</Label>
                 <Input
+                  id={`req-${key}`}
                   required={key === 'first_name' || key === 'last_name'}
                   placeholder={label}
                   value={form[key]}
@@ -120,21 +124,29 @@ export default function RequestPage() {
         </div>
 
         <div className="space-y-1.5">
-          <Label className="font-body text-sm font-medium">رقم الهاتف *</Label>
+          <Label htmlFor="req-phone" className="font-body text-sm font-medium">رقم الهاتف *</Label>
           <Input
+            id="req-phone"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
             required
             placeholder="05xxxxxxxx"
             value={form.phone}
-            onChange={e => set('phone', e.target.value)}
+            onChange={e => { set('phone', e.target.value); setPhoneError(false); }}
+            aria-invalid={phoneError}
+            aria-describedby={phoneError ? 'req-phone-error' : undefined}
             className="font-body"
             dir="ltr"
           />
+          {phoneError && <p id="req-phone-error" role="alert" className="text-sm font-body text-destructive">{PHONE_ERROR}</p>}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div className="space-y-1.5">
-            <Label className="font-body text-sm font-medium">التاريخ المطلوب *</Label>
+            <Label htmlFor="req-date" className="font-body text-sm font-medium">التاريخ المطلوب *</Label>
             <Input
+              id="req-date"
               type="date"
               required
               value={form.date}
@@ -144,14 +156,15 @@ export default function RequestPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="font-body text-sm font-medium">الوقت المطلوب *</Label>
-            <div className="flex gap-2">
+            <p id="req-slot-heading" className="font-body text-sm font-medium">الوقت المطلوب *</p>
+            <div role="group" aria-labelledby="req-slot-heading" className="flex gap-2">
               {BOOKABLE_SLOTS.map(s => (
                 <button
                   key={s.value}
                   type="button"
+                  aria-pressed={form.time_slot === s.value}
                   onClick={() => set('time_slot', s.value)}
-                  className={`flex-1 text-xs py-2 px-2 rounded-lg border font-body font-medium transition-all
+                  className={`flex-1 text-xs py-2 px-2 rounded-lg border font-body font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
                     ${form.time_slot === s.value
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'border-border text-muted-foreground hover:border-primary/50'
@@ -165,8 +178,9 @@ export default function RequestPage() {
         </div>
 
         <div className="space-y-1.5">
-          <Label className="font-body text-sm font-medium">اسم المناسبة *</Label>
+          <Label htmlFor="req-event" className="font-body text-sm font-medium">اسم المناسبة *</Label>
           <Input
+            id="req-event"
             required
             placeholder="مثال: عرس، خطبة، تجمع عائلي"
             value={form.event_name}
@@ -185,19 +199,12 @@ export default function RequestPage() {
             className="w-5 h-5 accent-primary cursor-pointer"
           />
           <label htmlFor="book_diwan_req" className="font-body text-sm font-medium cursor-pointer select-none">
-            ✅ احجز الديوان — <span className="text-muted-foreground font-normal">يشمل الطلب ديوان آل سلهب</span>
+            ✅ احجز الديوان - <span className="text-muted-foreground font-normal">يشمل الطلب ديوان آل سلهب</span>
           </label>
         </div>
 
         {/* Islamic date warning */}
         <IslamicDateWarning dateStr={form.date} />
-
-        {/* Future placeholder */}
-        <div className="bg-muted/50 border border-border/50 rounded-xl p-4 text-center">
-          <p className="text-xs font-body text-muted-foreground">
-            🔒 التحقق عبر رمز OTP — <span className="font-medium">قريباً</span>
-          </p>
-        </div>
 
         <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
         <Captcha key={captchaRound} onToken={setToken} />

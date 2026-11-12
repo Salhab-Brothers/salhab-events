@@ -10,12 +10,14 @@ afterEach(() => {
   cleanup();
   document.documentElement.classList.remove('dark');
   localStorage.clear();
+  window.history.replaceState(null, '', window.location.pathname);
 });
 
 // jsdom lacks these browser APIs used by the UI.
 window.scrollTo = vi.fn();
-window.confirm = vi.fn(() => true);
-window.alert = vi.fn();
+// jsdom has <dialog> but not showModal/close; model them with the `open` attribute.
+HTMLDialogElement.prototype.showModal = function showModal() { this.setAttribute('open', ''); };
+HTMLDialogElement.prototype.close = function close() { this.removeAttribute('open'); };
 
 // Radix UI (select, etc.) relies on pointer-capture and layout APIs jsdom lacks.
 Element.prototype.hasPointerCapture = () => false;

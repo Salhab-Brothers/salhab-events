@@ -17,11 +17,11 @@ test('visitors see events but never phone numbers', async ({ page }) => {
 test('booking request goes through the captcha and is stored as pending', async ({ page }) => {
   await page.goto('/');
   await nav(page, 'طلب حجز');
-  await page.getByPlaceholder('الاسم الأول').fill('خالد');
-  await page.getByPlaceholder('اسم العائلة').fill('سلهب');
-  await page.getByPlaceholder('05xxxxxxxx').fill('0501234567');
+  await page.getByLabel('الاسم الأول').fill('خالد');
+  await page.getByLabel('اسم العائلة').fill('سلهب');
+  await page.getByLabel('رقم الهاتف').fill('0501234567');
   await page.locator('input[type="date"]').fill(futureDate());
-  await page.getByPlaceholder('مثال: عرس، خطبة، تجمع عائلي').fill('تجمع');
+  await page.getByLabel('اسم المناسبة').fill('تجمع');
 
   const send = page.getByRole('button', { name: /إرسال/ });
   await expect(send).toBeDisabled();                         // captcha not solved yet
@@ -37,9 +37,9 @@ test('booking request goes through the captcha and is stored as pending', async 
 test('review waits for approval and is hidden from the public list', async ({ page }) => {
   await page.goto('/');
   await nav(page, 'التقييمات');
-  await page.getByPlaceholder('الاسم الكامل').fill('سارة');
-  await page.locator('form button[type="button"]').nth(4).click();
-  await page.getByPlaceholder('شاركنا تجربتك...').fill('تجربة ممتازة');
+  await page.getByLabel('اسمك').fill('سارة');
+  await page.getByRole('button', { name: '5 من 5' }).click();
+  await page.getByLabel('تعليقك').fill('تجربة ممتازة');
 
   const send = page.getByRole('button', { name: /إرسال التقييم/ });
   await expect(send).toBeEnabled({ timeout: 30_000 });

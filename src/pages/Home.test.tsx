@@ -103,6 +103,44 @@ describe('Home: navigation', () => {
   });
 });
 
+describe('Home: page URLs', () => {
+  it('opens the page named in the URL hash', async () => {
+    window.location.hash = '#/reviews';
+    render(<Home />);
+    expect(await screen.findByText('reviews-page')).toBeInTheDocument();
+  });
+
+  it('falls back to the calendar for an unknown hash', async () => {
+    window.location.hash = '#/nowhere';
+    render(<Home />);
+    expect(await screen.findByText('calendar:2')).toBeInTheDocument();
+  });
+
+  it('puts the page in the URL when navigating, and follows back and forward', async () => {
+    render(<Home />);
+    await screen.findByText('calendar:2');
+    await userEvent.click(nav('التقييمات'));
+    expect(await screen.findByText('reviews-page')).toBeInTheDocument();
+    expect(window.location.hash).toBe('#/reviews');
+    await userEvent.click(nav('المناسبات'));
+    expect(await screen.findByText('events:2')).toBeInTheDocument();
+
+    window.history.back();
+    expect(await screen.findByText('reviews-page')).toBeInTheDocument();
+    window.history.forward();
+    expect(await screen.findByText('events:2')).toBeInTheDocument();
+  });
+
+  it('refreshes the data when the page you are already on is chosen again', async () => {
+    window.history.replaceState(null, '', '#/calendar');   // no hashchange event, like a fresh page load
+    render(<Home />);
+    await screen.findByText('calendar:2');
+    await userEvent.click(nav('التقويم'));
+    await waitFor(() => expect(Booking.list).toHaveBeenCalledTimes(2));
+    expect(window.location.hash).toBe('#/calendar');
+  });
+});
+
 describe('Home: admin area', () => {
   it('shows the login form to visitors', async () => {
     render(<Home />);

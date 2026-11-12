@@ -59,6 +59,8 @@ Real browser tests (Playwright) run against a throwaway copy of the backend in D
 
 Local tests use Cloudflare's public always-pass captcha keys. CI runs the same suite as the `e2e` job.
 
+The suite also checks accessibility with axe (WCAG A and AA, serious and critical problems fail the build) on every public page and every admin tab, in a desktop and a phone-sized browser (the `mobile` project in `playwright.config.ts`). Pages have their own addresses (`#/events`, `#/reviews`, ...), so back, forward, reload and shared links work.
+
 ## Backups
 
 Free Supabase projects have no automatic backups, so `.github/workflows/backup.yml` exports the database (the `public` schema: bookings, requests, reviews, admins list) twice a week, encrypts it with GPG, and uploads it to a **private** Cloudflare R2 bucket (nothing is stored in this public repo). Admin logins are not in it: re-create them with the steps under "Admin accounts".

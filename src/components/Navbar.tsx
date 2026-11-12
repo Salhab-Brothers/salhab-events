@@ -48,10 +48,11 @@ export default function Navbar({ activePage, setActivePage, theme, toggleTheme }
           </button>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav aria-label="التنقل الرئيسي" className="hidden md:flex items-center gap-1">
             {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
+                aria-current={activePage === id ? 'page' : undefined}
                 onClick={() => handleNav(id)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-body font-medium transition-all duration-200
                   ${activePage === id
@@ -72,6 +73,7 @@ export default function Navbar({ activePage, setActivePage, theme, toggleTheme }
               size="icon"
               onClick={toggleTheme}
               className="rounded-full text-muted-foreground hover:text-foreground"
+              aria-label={theme === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}
               title={theme === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -81,6 +83,9 @@ export default function Navbar({ activePage, setActivePage, theme, toggleTheme }
               size="icon"
               className="md:hidden rounded-full"
               onClick={() => setMenuOpen(v => !v)}
+              aria-label="القائمة"
+              aria-expanded={menuOpen}
+              aria-controls="mobile-menu"
             >
               {menuOpen ? <X size={20} /> : <Menu size={20} />}
             </Button>
@@ -90,11 +95,12 @@ export default function Navbar({ activePage, setActivePage, theme, toggleTheme }
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-border/60 bg-card animate-fade-in">
+        <nav id="mobile-menu" aria-label="قائمة الجوال" className="md:hidden border-t border-border/60 bg-card animate-fade-in">
           <div className="px-4 py-3 space-y-1">
             {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
+                aria-current={activePage === id ? 'page' : undefined}
                 onClick={() => handleNav(id)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-body font-medium transition-all
                   ${activePage === id
@@ -107,7 +113,7 @@ export default function Navbar({ activePage, setActivePage, theme, toggleTheme }
               </button>
             ))}
           </div>
-        </div>
+        </nav>
       )}
     </header>
   );

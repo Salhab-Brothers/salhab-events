@@ -13,14 +13,14 @@ interface ConflictDialogProps {
 export default function ConflictDialog({ conflicts, onOverride, onCancel }: ConflictDialogProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md animate-fade-in">
+      <div role="alertdialog" aria-modal="true" aria-labelledby="conflict-title" className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md animate-fade-in">
         {/* Header */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-border">
           <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
             <AlertTriangle size={20} className="text-orange-600 dark:text-orange-400" />
           </div>
           <div>
-            <h2 className="font-heading font-bold text-lg text-foreground">⚠️ تعارض في الحجز</h2>
+            <h2 id="conflict-title" className="font-heading font-bold text-lg text-foreground">⚠️ تعارض في الحجز</h2>
             <p className="font-body text-sm text-muted-foreground">يوجد حجز مسبق في هذا اليوم والوقت:</p>
           </div>
         </div>
@@ -43,6 +43,7 @@ export default function ConflictDialog({ conflicts, onOverride, onCancel }: Conf
           <Button
             type="button"
             variant="outline"
+            autoFocus
             className="flex-1 font-body"
             onClick={onCancel}
           >

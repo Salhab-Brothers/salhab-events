@@ -67,4 +67,16 @@ describe('Navbar', () => {
     const mobile = screen.getAllByText('طلب حجز')[1].closest('button')!;
     expect(mobile.className).toContain('bg-primary');
   });
+
+  it('tells assistive tech about the menu state and the current page', async () => {
+    setup({ activePage: 'events' });
+    const toggle = screen.getByRole('button', { name: 'القائمة' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(toggle).toHaveAttribute('aria-controls', 'mobile-menu');
+    expect(screen.getByRole('navigation', { name: 'قائمة الجوال' })).toHaveAttribute('id', 'mobile-menu');
+    expect(screen.getAllByRole('button', { name: 'المناسبات' }).every((b) => b.getAttribute('aria-current') === 'page')).toBe(true);
+    expect(screen.getAllByRole('button', { name: 'التقييمات' }).every((b) => !b.hasAttribute('aria-current'))).toBe(true);
+  });
 });

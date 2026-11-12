@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Page } from '@playwright/test';
+import { nav } from './nav';
 
 const url = process.env.VITE_SUPABASE_URL ?? '';
 export const SUBMIT_URL = `${url}/functions/v1/submit`;
@@ -33,12 +34,12 @@ export async function seedAdmin() {
 
 export const futureDate = (daysAhead = 400) => new Date(Date.now() + daysAhead * 864e5).toISOString().slice(0, 10);
 
-export const nav = (page: Page, label: string) => page.getByRole('button', { name: label }).first().click();
+export { nav };
 
 export async function loginAsAdmin(page: Page) {
   await page.goto('/');
   await nav(page, 'الإدارة');
-  await page.getByPlaceholder('05xxxxxxxx').fill(ADMIN_PHONE);
-  await page.getByPlaceholder('••••••••').fill(ADMIN_PASSWORD);
+  await page.getByLabel('رقم الهاتف').fill(ADMIN_PHONE);
+  await page.getByLabel('كلمة المرور', { exact: true }).fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'دخول' }).click();
 }

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { parseISO, isAfter, startOfToday } from 'date-fns';
 import { LEVANTINE_MONTHS } from '@/lib/levantineMonths';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -14,6 +14,16 @@ const monthKey = (date: string) => {
   const d = parseISO(date);
   return `${LEVANTINE_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 };
+
+/** Charts are visual only, so screen readers skip them and read `summary` as a list instead. */
+function ChartFrame({ summary, children }: { summary: string[]; children: ReactNode }) {
+  return (
+    <>
+      <div aria-hidden="true">{children}</div>
+      {summary.length > 0 && <ul className="sr-only">{summary.map(line => <li key={line}>{line}</li>)}</ul>}
+    </>
+  );
+}
 
 export default function StatsPage({ bookings }: { bookings: Booking[] }) {
   const active = useMemo(() => bookings.filter(b => b.status !== 'cancelled'), [bookings]);
@@ -55,9 +65,9 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
 
   const statCards = [
     { icon: CalendarDays, label: 'إجمالي الحجوزات', value: active.length, color: 'text-primary', bg: 'bg-primary/10' },
-    { icon: TrendingUp, label: 'المناسبات القادمة', value: upcoming, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/30' },
+    { icon: TrendingUp, label: 'المناسبات القادمة', value: upcoming, color: 'text-amber-700 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/30' },
     { icon: CheckCircle, label: 'المناسبات المنتهية', value: past, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
-    { icon: Clock, label: 'الوقت الأكثر حجزاً', value: slotData.length ? slotData[0].name : '—', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30' },
+    { icon: Clock, label: 'الوقت الأكثر حجزاً', value: slotData.length ? slotData[0].name : '-', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30' },
   ];
 
   return (
@@ -89,6 +99,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
           {monthlyData.length === 0 ? (
             <p className="text-sm font-body text-muted-foreground text-center py-10">لا توجد بيانات</p>
           ) : (
+            <ChartFrame summary={monthlyData.map(d => `${d.month}: ${d.count}`)}>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={monthlyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <XAxis dataKey="month" tick={{ fontSize: 10, fontFamily: 'Cairo' }} />
@@ -100,6 +111,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
                 <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            </ChartFrame>
           )}
         </div>
 
@@ -110,6 +122,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
             <p className="text-sm font-body text-muted-foreground text-center py-10">لا توجد بيانات</p>
           ) : (
             <>
+              <ChartFrame summary={[]}>
               <ResponsiveContainer width="100%" height={180}>
                 <PieChart>
                   <Pie
@@ -131,6 +144,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
                   />
                 </PieChart>
               </ResponsiveContainer>
+              </ChartFrame>
               {/* External legend */}
               <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 mt-3">
                 {slotData.map((entry) => {
@@ -155,6 +169,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
           {active.length === 0 ? (
             <p className="text-sm font-body text-muted-foreground text-center py-10">لا توجد بيانات</p>
           ) : (
+            <ChartFrame summary={dayData.map(d => `${d.name}: ${d.count}`)}>
             <ResponsiveContainer width="100%" height={160}>
               <BarChart data={dayData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'Cairo' }} />
@@ -167,6 +182,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            </ChartFrame>
           )}
         </div>
       </div>

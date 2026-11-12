@@ -61,7 +61,7 @@ export default function CalendarGrid({ bookings }: { bookings: Booking[] }) {
       if (dayBookings.length < 2) return;
       const hasFull = dayBookings.some(b => normalizeSlot(b.time_slot) === 'full');
       if (hasFull) { set.add(dateStr); return; }
-      // Count each normalized slot — only same-slot conflicts matter
+      // Count each normalized slot - only same-slot conflicts matter
       const slotCounts: Record<string, number> = {};
       dayBookings.forEach(b => {
         const s = normalizeSlot(b.time_slot);
@@ -139,7 +139,7 @@ export default function CalendarGrid({ bookings }: { bookings: Booking[] }) {
               <h3 className="font-heading font-bold text-lg text-foreground mb-3 text-center">
                 {formatMonthYear(month)}
               </h3>
-              {/* Weekday headers — starts Saturday */}
+              {/* Weekday headers - starts Saturday */}
               <div className="grid grid-cols-7 gap-1 mb-1">
                 {WEEKDAY_LABELS.map((label, i) => (
                   <div

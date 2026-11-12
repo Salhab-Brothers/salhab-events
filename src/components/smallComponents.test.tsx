@@ -90,7 +90,7 @@ describe('SummaryBar', () => {
     );
     expect(screen.getByText('3 يوم')).toBeInTheDocument();
     expect(screen.getByText('2 مناسبة')).toBeInTheDocument();
-    expect(screen.getByText(/الأقرب —/)).toBeInTheDocument();
+    expect(screen.getByText(/الأقرب -/)).toBeInTheDocument();
   });
 
   it('shows a placeholder when nothing is upcoming', () => {

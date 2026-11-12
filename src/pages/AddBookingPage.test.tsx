@@ -25,9 +25,9 @@ const dateInput = (c: HTMLElement) => c.querySelector('input[type="date"]')!;
 
 const fill = async (c: HTMLElement, date = FUTURE) => {
   fireEvent.change(dateInput(c), { target: { value: date } });
-  await userEvent.type(screen.getByPlaceholderText(/عرس أبو محمد/), 'عرس');
-  await userEvent.type(screen.getByPlaceholderText('الاسم الكامل'), 'أحمد');
-  await userEvent.type(screen.getByPlaceholderText('05xxxxxxxx'), '0501234567');
+  await userEvent.type(screen.getByLabelText(/اسم المناسبة/), 'عرس');
+  await userEvent.type(screen.getByLabelText(/اسم الشخص المسؤول/), 'أحمد');
+  await userEvent.type(screen.getByLabelText(/رقم الهاتف/), '0501234567');
 };
 
 const submit = () => userEvent.click(screen.getByRole('button', { name: /إضافة الحجز|حفظ التعديلات/ }));
@@ -46,7 +46,7 @@ describe('AddBookingPage: new booking', () => {
     await fill(container);
     await userEvent.click(screen.getByRole('button', { name: 'عصراً' }));
     await userEvent.click(screen.getByLabelText(/احجز الديوان/));
-    await userEvent.type(screen.getByPlaceholderText('أي تفاصيل إضافية...'), 'ملاحظة');
+    await userEvent.type(screen.getByLabelText(/ملاحظات/), 'ملاحظة');
     await submit();
 
     await waitFor(() => expect(onBookingAdded).toHaveBeenCalledTimes(1));
@@ -55,7 +55,7 @@ describe('AddBookingPage: new booking', () => {
       phone: '0501234567', notes: 'ملاحظة', book_diwan: true, status: 'confirmed',
     });
     expect(dateInput(container)).toHaveValue('');
-    expect(screen.getByPlaceholderText('الاسم الكامل')).toHaveValue('');
+    expect(screen.getByLabelText(/اسم الشخص المسؤول/)).toHaveValue('');
   });
 
   it('hides the success state after a few seconds', async () => {
@@ -80,7 +80,7 @@ describe('AddBookingPage: new booking', () => {
     await submit();
     expect(await screen.findByText('تعذّر حفظ الحجز. حاول مرة أخرى.')).toBeInTheDocument();
     expect(onBookingAdded).not.toHaveBeenCalled();
-    expect(screen.getByPlaceholderText('الاسم الكامل')).toHaveValue('أحمد');
+    expect(screen.getByLabelText(/اسم الشخص المسؤول/)).toHaveValue('أحمد');
   });
 });
 
@@ -171,9 +171,9 @@ describe('AddBookingPage: editing', () => {
     const { container, onBookingAdded } = setup({ editingBooking: editing });
     expect(screen.getByText('تعديل الحجز')).toBeInTheDocument();
     expect(dateInput(container)).toHaveValue(FUTURE);
-    expect(screen.getByPlaceholderText(/عرس أبو محمد/)).toHaveValue('قديم');
-    await userEvent.clear(screen.getByPlaceholderText(/عرس أبو محمد/));
-    await userEvent.type(screen.getByPlaceholderText(/عرس أبو محمد/), 'جديد');
+    expect(screen.getByLabelText(/اسم المناسبة/)).toHaveValue('قديم');
+    await userEvent.clear(screen.getByLabelText(/اسم المناسبة/));
+    await userEvent.type(screen.getByLabelText(/اسم المناسبة/), 'جديد');
     await submit();
     await waitFor(() => expect(onBookingAdded).toHaveBeenCalled());
     expect(Booking.update).toHaveBeenCalledWith('e1', {
@@ -182,7 +182,7 @@ describe('AddBookingPage: editing', () => {
     });
     expect(Booking.create).not.toHaveBeenCalled();
     // the form is kept after an edit
-    expect(screen.getByPlaceholderText(/عرس أبو محمد/)).toHaveValue('جديد');
+    expect(screen.getByLabelText(/اسم المناسبة/)).toHaveValue('جديد');
   });
 
   it('does not flag the booking being edited as its own conflict', async () => {
@@ -193,7 +193,7 @@ describe('AddBookingPage: editing', () => {
 
   it('fills missing private fields with empty strings', () => {
     setup({ editingBooking: makeBooking({ phone: undefined, notes: undefined }) });
-    expect(screen.getByPlaceholderText('05xxxxxxxx')).toHaveValue('');
+    expect(screen.getByLabelText(/رقم الهاتف/)).toHaveValue('');
   });
 
   it('can be cancelled', async () => {
@@ -205,5 +205,18 @@ describe('AddBookingPage: editing', () => {
   it('has no cancel button when adding', () => {
     setup();
     expect(screen.queryByRole('button', { name: 'إلغاء' })).toBeNull();
+  });
+
+  it('refuses an invalid phone number and does not save', async () => {
+    const { container } = setup();
+    await fill(container);
+    const phone = screen.getByLabelText(/رقم الهاتف/);
+    await userEvent.clear(phone);
+    await userEvent.type(phone, 'abc');
+    await submit();
+    expect(await screen.findByRole('alert')).toHaveTextContent('رقم الهاتف غير صالح');
+    expect(Booking.create).not.toHaveBeenCalled();
+    await userEvent.type(phone, '1234567');
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

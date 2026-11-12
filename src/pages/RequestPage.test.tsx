@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import userEvent from '@/test/user';
 
 const { BookingRequest } = vi.hoisted(() => ({ BookingRequest: { create: vi.fn() } }));
@@ -14,18 +14,18 @@ beforeEach(() => {
 });
 
 const fillRequired = async (container: HTMLElement) => {
-  await userEvent.type(screen.getByPlaceholderText('الاسم الأول'), 'خالد');
-  await userEvent.type(screen.getByPlaceholderText('اسم العائلة'), 'سلهب');
-  await userEvent.type(screen.getByPlaceholderText('05xxxxxxxx'), '0501234567');
+  await userEvent.type(screen.getByLabelText('الاسم الأول'), 'خالد');
+  await userEvent.type(screen.getByLabelText('اسم العائلة'), 'سلهب');
+  await userEvent.type(screen.getByLabelText(/رقم الهاتف/), '0501234567');
   fireEvent.change(container.querySelector('input[type="date"]')!, { target: { value: '2099-07-01' } });
-  await userEvent.type(screen.getByPlaceholderText('مثال: عرس، خطبة، تجمع عائلي'), 'عرس');
+  await userEvent.type(screen.getByLabelText(/اسم المناسبة/), 'عرس');
 };
 
 describe('RequestPage', () => {
   it('submits a pending request with the entered details', async () => {
     const { container } = render(<RequestPage />);
     await fillRequired(container);
-    await userEvent.type(screen.getByPlaceholderText('الاسم الثاني'), 'أحمد');
+    await userEvent.type(screen.getByLabelText('الاسم الثاني'), 'أحمد');
     await userEvent.click(screen.getByRole('button', { name: 'عصراً' }));
     await userEvent.click(screen.getByLabelText(/احجز الديوان/));
     await userEvent.click(screen.getByRole('button', { name: /إرسال/ }));
@@ -50,7 +50,7 @@ describe('RequestPage', () => {
     await fillRequired(container);
     await userEvent.click(screen.getByRole('button', { name: /إرسال/ }));
     await userEvent.click(await screen.findByText('تقديم طلب آخر'));
-    expect(screen.getByPlaceholderText('الاسم الأول')).toHaveValue('');
+    expect(screen.getByLabelText('الاسم الأول')).toHaveValue('');
   });
 
   it('reports a failure and allows retrying', async () => {
@@ -82,5 +82,39 @@ describe('RequestPage', () => {
     expect(screen.getByRole('button', { name: /إرسال/ })).toBeDisabled();
     finish();
     await waitFor(() => expect(screen.getByText('تم إرسال طلبك بنجاح')).toBeInTheDocument());
+  });
+
+  it('refuses an invalid phone number and explains why, then accepts a corrected one', async () => {
+    const { container } = render(<RequestPage />);
+    await fillRequired(container);
+    const phone = screen.getByLabelText(/رقم الهاتف/);
+    await userEvent.clear(phone);
+    await userEvent.type(phone, '12');
+    await userEvent.click(screen.getByRole('button', { name: /إرسال/ }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('رقم الهاتف غير صالح');
+    expect(phone).toHaveAttribute('aria-invalid', 'true');
+    expect(BookingRequest.create).not.toHaveBeenCalled();
+
+    await userEvent.clear(phone);
+    await userEvent.type(phone, '+972 54-259-0959');
+    expect(screen.queryByRole('alert')).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: /إرسال/ }));
+    await screen.findByText('تم إرسال طلبك بنجاح');
+  });
+
+  it('asks for a phone keypad and has no coming-soon OTP box', () => {
+    render(<RequestPage />);
+    expect(screen.getByLabelText(/رقم الهاتف/)).toHaveAttribute('inputmode', 'tel');
+    expect(screen.queryByText(/OTP/)).toBeNull();
+  });
+
+  it('exposes the time choice as pressed buttons in a labelled group', async () => {
+    render(<RequestPage />);
+    const group = screen.getByRole('group', { name: /الوقت المطلوب/ });
+    const afternoon = within(group).getByRole('button', { name: 'عصراً' });
+    expect(afternoon).toHaveAttribute('aria-pressed', 'false');
+    await userEvent.click(afternoon);
+    expect(afternoon).toHaveAttribute('aria-pressed', 'true');
   });
 });

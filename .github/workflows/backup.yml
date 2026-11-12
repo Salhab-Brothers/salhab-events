@@ -1,7 +1,9 @@
-# Free Supabase projects have no automatic backups. This takes an encrypted copy of the
-# database twice a week and keeps it as a workflow artifact for 30 days.
-# Needs two repository secrets: SUPABASE_DB_URL (the "Session pooler" connection string,
-# runners cannot reach the direct IPv6 host) and BACKUP_PASSPHRASE.
+# Free Supabase projects have no automatic backups. Twice a week this exports the database,
+# encrypts it, and uploads it to a PRIVATE Cloudflare R2 bucket. Nothing is stored in this
+# (public) repository. Set a lifecycle rule on the bucket to delete files older than 30 days.
+# Repository secrets: SUPABASE_DB_URL (the "Session pooler" connection string, runners cannot
+# reach the direct IPv6 host), BACKUP_PASSPHRASE, R2_ENDPOINT, R2_BUCKET, R2_ACCESS_KEY_ID,
+# R2_SECRET_ACCESS_KEY.
 name: backup
 on:
   schedule:
@@ -34,9 +36,15 @@ jobs:
           # Prove it can be restored before trusting it.
           gpg --batch --yes --pinentry-mode loopback --passphrase-file pass.txt -d backup.sql.gpg | cmp - backup.sql
           shred -u pass.txt backup.sql
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: db-backup-${{ github.run_id }}
-          path: backup.sql.gpg
-          retention-days: 30
-          if-no-files-found: error
+      - name: Upload to the private R2 bucket
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          test -n "$R2_ENDPOINT" && test -n "$R2_BUCKET" || { echo "R2 secrets are not set"; exit 1; }
+          aws s3 cp backup.sql.gpg "s3://$R2_BUCKET/db-$(date -u +%Y-%m-%d-%H%M).sql.gpg" --endpoint-url "$R2_ENDPOINT"
+          echo "newest backups in the bucket:"
+          aws s3 ls "s3://$R2_BUCKET/" --endpoint-url "$R2_ENDPOINT" | tail -3

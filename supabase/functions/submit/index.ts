@@ -60,5 +60,9 @@ Deno.serve(async (req) => {
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const { error } = await db.from(input.kind === 'request' ? 'booking_requests' : 'reviews').insert(row);
-  return error ? reply({ error: 'save' }, 500) : reply({ ok: true });
+  if (error) {
+    console.error('submit: insert failed', error.code, error.message);
+    return reply({ error: 'save' }, 500);
+  }
+  return reply({ ok: true });
 });

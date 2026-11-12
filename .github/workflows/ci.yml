@@ -27,3 +27,26 @@ jobs:
       # Fails below 95% statements, branches, functions or lines (see vite.config.ts).
       - run: npm run test:coverage
       - run: npm run build
+
+  # Real browser against a throwaway local backend (Docker); never touches production data.
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e:db
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

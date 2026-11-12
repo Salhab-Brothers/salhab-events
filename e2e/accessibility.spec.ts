@@ -2,7 +2,8 @@ import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { loginAsAdmin, resetData, seedAdmin, service, futureDate } from './helpers';
 
-// Runs on a desktop and a phone-sized browser (see the projects in playwright.config.ts).
+// Runs on a desktop and a phone-sized browser (see the projects in playwright.config.ts), in the
+// light and the dark theme.
 // Fails on serious or critical WCAG A/AA problems. The Cloudflare captcha iframe is third
 // party content, so it is left out.
 async function expectAccessible(page: Page) {
@@ -13,6 +14,15 @@ async function expectAccessible(page: Page) {
     .analyze();
   const serious = violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
   expect(serious.map((v) => `${v.id} [${v.impact}]: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`)).toEqual([]);
+}
+
+type Theme = 'light' | 'dark';
+
+/** The theme is not stored anywhere, so dark mode is switched on with the navbar button. */
+async function setTheme(page: Page, theme: Theme) {
+  if (theme === 'light') return;
+  await page.getByRole('button', { name: 'الوضع الداكن' }).click();
+  await expect(page.locator('html')).toHaveClass(/dark/);
 }
 
 test.beforeAll(seedAdmin);
@@ -30,26 +40,31 @@ test.beforeEach(async () => {
   await service.from('reviews').insert({ reviewer_name: 'نور', rating: 5, comment: 'ينتظر المراجعة', approved: false });
 });
 
-for (const id of ['calendar', 'events', 'request', 'reviews', 'stats']) {
-  test(`public page "${id}" has no serious accessibility problems`, async ({ page }) => {
-    await page.goto(`/#/${id}`);
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+for (const theme of ['light', 'dark'] as const) {
+  for (const id of ['calendar', 'events', 'request', 'reviews', 'stats']) {
+    test(`public page "${id}" has no serious accessibility problems (${theme})`, async ({ page }) => {
+      await page.goto(`/#/${id}`);
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      await setTheme(page, theme);
+      await expectAccessible(page);
+    });
+  }
+
+  test(`admin sign-in page has no serious accessibility problems (${theme})`, async ({ page }) => {
+    await page.goto('/#/admin');
+    await expect(page.getByLabel('رقم الهاتف')).toBeVisible();
+    await setTheme(page, theme);
     await expectAccessible(page);
   });
+
+  test(`every admin tab has no serious accessibility problems (${theme})`, async ({ page }) => {
+    await loginAsAdmin(page);
+    await expect(page.getByRole('heading', { name: 'لوحة الإدارة' })).toBeVisible();
+    await setTheme(page, theme);
+    const main = page.locator('main');
+    for (const tab of ['الطلبات', 'الحجوزات', 'إضافة حجز', 'التقييمات', 'تحميل الصورة']) {
+      await main.getByRole('button', { name: new RegExp('^' + tab) }).click();   // the requests tab also carries a count badge
+      await expectAccessible(page);
+    }
+  });
 }
-
-test('admin sign-in page has no serious accessibility problems', async ({ page }) => {
-  await page.goto('/#/admin');
-  await expect(page.getByLabel('رقم الهاتف')).toBeVisible();
-  await expectAccessible(page);
-});
-
-test('every admin tab has no serious accessibility problems', async ({ page }) => {
-  await loginAsAdmin(page);
-  await expect(page.getByRole('heading', { name: 'لوحة الإدارة' })).toBeVisible();
-  const main = page.locator('main');
-  for (const tab of ['الطلبات', 'الحجوزات', 'إضافة حجز', 'التقييمات', 'تحميل الصورة']) {
-    await main.getByRole('button', { name: new RegExp('^' + tab) }).click();   // the requests tab also carries a count badge
-    await expectAccessible(page);
-  }
-});

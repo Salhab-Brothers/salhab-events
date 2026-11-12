@@ -13,6 +13,13 @@ updates:
       # CI and production run Node 22, so types for a newer Node would describe APIs we do not have.
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
+      # Blocked: eslint-plugin-react does not support ESLint 10 yet. Revisit when it does.
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
+      # Tailwind 4 is a real migration (config format, renamed classes, a different animation plugin).
+      # Do it as its own PR with before and after screenshots.
+      - dependency-name: 'tailwindcss'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:

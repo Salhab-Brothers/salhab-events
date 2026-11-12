@@ -9,6 +9,10 @@ updates:
       # Safe updates arrive as one PR; major versions each get their own.
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # CI and production run Node 22, so types for a newer Node would describe APIs we do not have.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:

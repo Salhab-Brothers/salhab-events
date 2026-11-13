@@ -60,7 +60,7 @@ The `submit` function checks more than the captcha: it only answers browsers on 
 
 ### Content Security Policy
 
-`vercel.json` sets a Content-Security-Policy: scripts only from the site and Cloudflare's captcha, connections only to the site and the Supabase project, no plugins, and no framing. `style-src` keeps `'unsafe-inline'` because the dropdown component injects a style element when it opens. If you add a service the site talks to (analytics, a new API, another font host), allow it in that header or the browser will block it; the console shows the blocked address.
+`vercel.json` sets a Content-Security-Policy: scripts only from the site and Cloudflare's captcha, connections only to the site and the Supabase project, no plugins, and no framing. `style-src` keeps `'unsafe-inline'` because the dropdown component injects a style element when it opens. If you add a service the site talks to (analytics, a new API, another host for scripts or fonts), allow it in that header or the browser will block it; the console shows the blocked address.
 
 ## End-to-end tests
 

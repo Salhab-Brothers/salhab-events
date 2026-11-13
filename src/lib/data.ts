@@ -35,3 +35,9 @@ export const BOOKABLE_SLOTS: { value: CanonicalSlot; label: string }[] = [
   { value: 'wedding', label: TIME_SLOT_LABELS.wedding },
   { value: 'full', label: TIME_SLOT_LABELS.full },
 ];
+
+/** Two bookings on one day clash when either takes the whole day or both want the same slot. */
+export const slotsClash = (a: TimeSlot, b: TimeSlot): boolean => {
+  const [x, y] = [normalizeSlot(a), normalizeSlot(b)];
+  return x === y || x === 'full' || y === 'full';
+};

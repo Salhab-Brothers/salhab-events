@@ -8,7 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { entities } from '@/api/api';
 import IslamicDateWarning from '@/components/IslamicDateWarning';
 import ConflictDialog from '@/components/ConflictDialog';
-import { BOOKABLE_SLOTS, normalizeSlot } from '@/lib/data';
+import { DiwanCheckbox, SlotPicker } from '@/components/FormControls';
+import { normalizeSlot } from '@/lib/data';
 import { isValidPhone, PHONE_ERROR } from '@/lib/phone';
 import type { Booking, BookingInput } from '@/types';
 
@@ -97,7 +98,7 @@ export default function AddBookingPage({ bookings, onBookingAdded, editingBookin
   };
 
   return (
-    <div className="animate-fade-in max-w-2xl">
+    <div className="animate-fade-in mx-auto max-w-2xl">
       <div className="mb-6">
         <h1 className="font-heading font-bold text-2xl sm:text-3xl text-foreground mb-1">
           {editingBooking ? 'تعديل الحجز' : 'إضافة حجز جديد'}
@@ -105,7 +106,7 @@ export default function AddBookingPage({ bookings, onBookingAdded, editingBookin
         <p className="font-body text-muted-foreground text-sm">أدخل تفاصيل المناسبة للحجز</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm space-y-5">
+      <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-4 sm:p-6 shadow-sm space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div className="space-y-1.5">
             <Label htmlFor="add-date" className="font-body text-sm font-medium">التاريخ *</Label>
@@ -121,23 +122,7 @@ export default function AddBookingPage({ bookings, onBookingAdded, editingBookin
           </div>
           <div className="space-y-1.5">
             <p id="add-slot-heading" className="font-body text-sm font-medium">الوقت *</p>
-            <div role="group" aria-labelledby="add-slot-heading" className="flex gap-2 flex-wrap">
-              {BOOKABLE_SLOTS.map(s => (
-                <button
-                  key={s.value}
-                  type="button"
-                  aria-pressed={form.time_slot === s.value}
-                  onClick={() => { set('time_slot', s.value); setConflicts(null); }}
-                  className={`flex-1 min-w-[80px] text-xs sm:text-sm py-2 px-3 rounded-lg border font-body font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
-                    ${form.time_slot === s.value
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
-                    }`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
+            <SlotPicker value={form.time_slot} onChange={slot => { set('time_slot', slot); setConflicts(null); }} labelId="add-slot-heading" />
           </div>
         </div>
 
@@ -185,19 +170,12 @@ export default function AddBookingPage({ bookings, onBookingAdded, editingBookin
           </div>
         </div>
 
-        {/* Book Diwan checkbox */}
-        <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/30">
-          <input
-            type="checkbox"
-            id="book_diwan"
-            checked={!!form.book_diwan}
-            onChange={e => set('book_diwan', e.target.checked)}
-            className="w-5 h-5 accent-primary cursor-pointer"
-          />
-          <label htmlFor="book_diwan" className="font-body text-sm font-medium cursor-pointer select-none">
-            ✅ احجز الديوان - <span className="text-muted-foreground font-normal">يشمل الحجز ديوان آل سلهب</span>
-          </label>
-        </div>
+        <DiwanCheckbox
+          id="book_diwan"
+          checked={!!form.book_diwan}
+          onChange={checked => set('book_diwan', checked)}
+          hint="يشمل الحجز ديوان آل سلهب"
+        />
 
         <div className="space-y-1.5">
           <Label htmlFor="add-notes" className="font-body text-sm font-medium">ملاحظات (اختياري)</Label>

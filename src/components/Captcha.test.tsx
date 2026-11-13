@@ -49,6 +49,19 @@ describe('Captcha', () => {
     expect(turnstile.remove).toHaveBeenCalledWith('w1');
   });
 
+  it.each([[318, 'normal'], [300, 'normal'], [299, 'compact'], [0, 'compact']] as const)(
+    'with %ipx of room it asks for the %s widget', async (width, size) => {
+      const Captcha = await loadCaptcha();
+      vi.stubEnv('VITE_TURNSTILE_SITE_KEY', 'site');
+      const spy = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(width);
+      render(<Captcha onToken={vi.fn()} />);
+      await waitFor(() => expect(document.head.querySelector('script')).not.toBeNull());
+      document.head.querySelector('script')!.dispatchEvent(new Event('load'));
+      await waitFor(() => expect(turnstile.render).toHaveBeenCalled());
+      expect(turnstile.render.mock.calls[0][1].size).toBe(size);
+      spy.mockRestore();
+    });
+
   it('clears the token when the script fails to load', async () => {
     const Captcha = await loadCaptcha();
     vi.stubEnv('VITE_TURNSTILE_SITE_KEY', 'site');

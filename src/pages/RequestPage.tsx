@@ -10,7 +10,7 @@ import Captcha from '@/components/Captcha';
 import { honeypotTripped } from '@/lib/honeypot';
 import { isValidPhone, PHONE_ERROR } from '@/lib/phone';
 import { captchaSiteKey, sendPublic } from '@/lib/publicSubmit';
-import { BOOKABLE_SLOTS } from '@/lib/data';
+import { DiwanCheckbox, SlotPicker } from '@/components/FormControls';
 import type { BookingRequest } from '@/types';
 
 
@@ -94,7 +94,7 @@ export default function RequestPage() {
   }
 
   return (
-    <div className="animate-fade-in max-w-2xl">
+    <div className="animate-fade-in mx-auto max-w-2xl">
       <div className="mb-6">
         <h1 className="font-heading font-bold text-2xl sm:text-3xl text-foreground mb-1">طلب حجز</h1>
         <p className="font-body text-muted-foreground text-sm">
@@ -102,7 +102,7 @@ export default function RequestPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm space-y-5">
+      <form onSubmit={handleSubmit} className="bg-card border border-border/50 rounded-2xl p-4 sm:p-6 shadow-sm space-y-5">
         {/* Name fields */}
         <div role="group" aria-labelledby="req-name-heading">
           <p id="req-name-heading" className="font-body text-sm font-medium mb-3">الاسم الرباعي *</p>
@@ -116,7 +116,7 @@ export default function RequestPage() {
                   placeholder={label}
                   value={form[key]}
                   onChange={e => set(key, e.target.value)}
-                  className="font-body text-sm"
+                  className="font-body"
                 />
               </div>
             ))}
@@ -157,23 +157,7 @@ export default function RequestPage() {
           </div>
           <div className="space-y-1.5">
             <p id="req-slot-heading" className="font-body text-sm font-medium">الوقت المطلوب *</p>
-            <div role="group" aria-labelledby="req-slot-heading" className="flex gap-2">
-              {BOOKABLE_SLOTS.map(s => (
-                <button
-                  key={s.value}
-                  type="button"
-                  aria-pressed={form.time_slot === s.value}
-                  onClick={() => set('time_slot', s.value)}
-                  className={`flex-1 text-xs py-2 px-2 rounded-lg border font-body font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
-                    ${form.time_slot === s.value
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'border-border text-muted-foreground hover:border-primary/50'
-                    }`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
+            <SlotPicker value={form.time_slot} onChange={slot => set('time_slot', slot)} labelId="req-slot-heading" />
           </div>
         </div>
 
@@ -189,19 +173,12 @@ export default function RequestPage() {
           />
         </div>
 
-        {/* Book Diwan checkbox */}
-        <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/30">
-          <input
-            type="checkbox"
-            id="book_diwan_req"
-            checked={!!form.book_diwan}
-            onChange={e => set('book_diwan', e.target.checked)}
-            className="w-5 h-5 accent-primary cursor-pointer"
-          />
-          <label htmlFor="book_diwan_req" className="font-body text-sm font-medium cursor-pointer select-none">
-            ✅ احجز الديوان - <span className="text-muted-foreground font-normal">يشمل الطلب ديوان آل سلهب</span>
-          </label>
-        </div>
+        <DiwanCheckbox
+          id="book_diwan_req"
+          checked={!!form.book_diwan}
+          onChange={checked => set('book_diwan', checked)}
+          hint="يشمل الطلب ديوان آل سلهب"
+        />
 
         {/* Islamic date warning */}
         <IslamicDateWarning dateStr={form.date} />

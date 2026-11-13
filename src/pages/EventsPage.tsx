@@ -46,7 +46,7 @@ const PillButton = ({ active, onClick, children }: { active: boolean; onClick: (
     type="button"
     aria-pressed={active}
     onClick={onClick}
-    className={`px-3 py-1.5 rounded-full text-xs font-body font-medium border transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+    className={`min-h-9 px-3 py-1.5 rounded-full text-xs font-body font-medium border transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
       ${active
         ? 'bg-primary text-primary-foreground border-primary'
         : 'bg-card border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'
@@ -116,8 +116,8 @@ export default function EventsPage({ bookings }: { bookings: Booking[] }) {
       </div>
 
       {/* Search + Month + Status row */}
-      <div className="flex flex-wrap gap-3 mb-3">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="mb-3 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+        <div className="relative col-span-2 sm:min-w-[200px] sm:flex-1">
           <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             aria-label="ابحث عن حجز"
@@ -128,7 +128,7 @@ export default function EventsPage({ bookings }: { bookings: Booking[] }) {
           />
         </div>
         <Select value={filterMonth} onValueChange={setFilterMonth}>
-          <SelectTrigger aria-label="الشهر" className="w-40 font-body">
+          <SelectTrigger aria-label="الشهر" className="w-full font-body sm:w-40">
             <SelectValue placeholder="الشهر" />
           </SelectTrigger>
           <SelectContent>
@@ -141,7 +141,7 @@ export default function EventsPage({ bookings }: { bookings: Booking[] }) {
           </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger aria-label="الحالة" className="w-36 font-body">
+          <SelectTrigger aria-label="الحالة" className="w-full font-body sm:w-36">
             <SelectValue placeholder="الحالة" />
           </SelectTrigger>
           <SelectContent>
@@ -153,39 +153,39 @@ export default function EventsPage({ bookings }: { bookings: Booking[] }) {
         </Select>
       </div>
 
-      {/* Event type pills */}
-      <div className="flex flex-wrap gap-2 mb-3">
-        {EVENT_TYPE_FILTERS.map(t => (
-          <PillButton key={t} active={filterType === t} onClick={() => setFilterType(t)}>{t}</PillButton>
-        ))}
-      </div>
-
-      {/* Time slot pills */}
-      <div className="flex flex-wrap gap-2 mb-3">
-        {SLOT_FILTERS.map(s => (
-          <PillButton key={s.value} active={filterSlot === s.value} onClick={() => setFilterSlot(s.value)}>{s.label}</PillButton>
-        ))}
+      {/* Event type and time slot pills */}
+      <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-8">
+        <div role="group" aria-label="نوع المناسبة" className="flex flex-wrap gap-2">
+          {EVENT_TYPE_FILTERS.map(t => (
+            <PillButton key={t} active={filterType === t} onClick={() => setFilterType(t)}>{t}</PillButton>
+          ))}
+        </div>
+        <div role="group" aria-label="الوقت" className="flex flex-wrap gap-2">
+          {SLOT_FILTERS.map(s => (
+            <PillButton key={s.value} active={filterSlot === s.value} onClick={() => setFilterSlot(s.value)}>{s.label}</PillButton>
+          ))}
+        </div>
       </div>
 
       {/* Diwan + Clear filters row */}
       <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
-        <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 cursor-pointer select-none">
+        <div className="flex flex-wrap items-center gap-x-5">
+          <label className="flex min-h-9 items-center gap-2 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={filterDiwan}
               onChange={e => setFilterDiwan(e.target.checked)}
-              className="w-4 h-4 accent-primary cursor-pointer"
+              className="w-5 h-5 accent-primary cursor-pointer"
             />
             <span className="font-body text-sm text-muted-foreground">الديوان فقط</span>
           </label>
           {pastCount > 0 && (
-            <label className="flex items-center gap-2 cursor-pointer select-none">
+            <label className="flex min-h-9 items-center gap-2 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={showPast}
                 onChange={e => setShowPast(e.target.checked)}
-                className="w-4 h-4 accent-primary cursor-pointer"
+                className="w-5 h-5 accent-primary cursor-pointer"
               />
               <span className="font-body text-sm text-muted-foreground">إظهار المناسبات الماضية ({pastCount})</span>
             </label>
@@ -209,36 +209,32 @@ export default function EventsPage({ bookings }: { bookings: Booking[] }) {
           <p className="font-body text-muted-foreground text-sm">جرّب تغيير معايير البحث أو مسح الفلاتر</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
           {filtered.map(booking => (
             <div
               key={booking.id}
               className="bg-card border border-border/50 rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow"
             >
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                <div className="flex-1">
-                  <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <h3 className="font-heading font-bold text-base text-foreground">{booking.event_name}</h3>
-                    <span className={`text-xs px-2 py-0.5 rounded-full border font-body ${SLOT_BADGE[booking.time_slot]}`}>
-                      {TIME_SLOT_LABELS[booking.time_slot]}
-                    </span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-body ${STATUS_BADGE[booking.status]}`}>
-                      {STATUS_LABELS[booking.status]}
-                    </span>
-                    {booking.book_diwan && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-body">✅ الديوان</span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-body text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                      <CalendarDays size={13} className="text-primary/60" />
-                      <span>{formatFullDateStr(booking.date)}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <User size={13} className="text-primary/60" />
-                      <span>{booking.person_name}</span>
-                    </div>
-                  </div>
+              <h3 className="font-heading font-bold text-base text-foreground mb-2 break-words">{booking.event_name}</h3>
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className={`text-xs px-2 py-0.5 rounded-full border font-body ${SLOT_BADGE[booking.time_slot]}`}>
+                  {TIME_SLOT_LABELS[booking.time_slot]}
+                </span>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-body ${STATUS_BADGE[booking.status]}`}>
+                  {STATUS_LABELS[booking.status]}
+                </span>
+                {booking.book_diwan && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-800 font-body">✅ الديوان</span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-body text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <CalendarDays size={13} className="text-primary/60 shrink-0" />
+                  <span>{formatFullDateStr(booking.date)}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <User size={13} className="text-primary/60 shrink-0" />
+                  <span className="break-words">{booking.person_name}</span>
                 </div>
               </div>
             </div>

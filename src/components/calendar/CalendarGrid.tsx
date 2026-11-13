@@ -11,7 +11,12 @@ import type { Booking } from '@/types';
 import { getIslamicEvents } from '@/lib/islamicDates';
 
 // Week starts on Saturday: Sat=6, Sun=0, Mon=1, Tue=2, Wed=3, Thu=4, Fri=5
-const WEEKDAY_LABELS = ['السبت', 'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'];
+// The short form (no "ال") is what fits above a 35 to 45px phone cell; the full name stays for screen readers.
+const WEEKDAYS = [
+  { full: 'السبت', short: 'سبت' }, { full: 'الأحد', short: 'أحد' }, { full: 'الإثنين', short: 'إثنين' },
+  { full: 'الثلاثاء', short: 'ثلاثاء' }, { full: 'الأربعاء', short: 'أربعاء' }, { full: 'الخميس', short: 'خميس' },
+  { full: 'الجمعة', short: 'جمعة' },
+];
 
 // Map JS getDay() (0=Sun..6=Sat) to column index when week starts Saturday
 // Sat=6 → col 0, Sun=0 → col 1, Mon=1 → col 2, Tue=2 → col 3, Wed=3 → col 4, Thu=4 → col 5, Fri=5 → col 6
@@ -99,21 +104,21 @@ export default function CalendarGrid({ bookings }: { bookings: Booking[] }) {
   return (
     <div>
       {/* Legend */}
-      <div className="sticky top-16 z-10 bg-background/95 backdrop-blur-sm py-2 mb-3 -mx-1 px-1">
-        <div className="flex flex-wrap gap-3 text-xs font-body">
+      <div className="mb-4 lg:sticky lg:top-16 lg:z-10 lg:bg-card/95 lg:backdrop-blur-sm lg:py-2">
+        <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs font-body">
           {[
-            { label: 'حر',              cls: 'bg-emerald-100 border border-emerald-200' },
-            { label: 'ظهراً / عصراً',   cls: 'bg-amber-100 border border-amber-200' },
-            { label: 'ظهراً + مساءً',   cls: 'bg-orange-100 border border-orange-200' },
-            { label: 'مساءً',           cls: 'bg-violet-100 border border-violet-200' },
-            { label: 'اليوم كاملاً',    cls: 'bg-red-100 border border-red-200' },
+            { label: 'حر',              cls: 'bg-emerald-100 border border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900/40' },
+            { label: 'ظهراً / عصراً',   cls: 'bg-amber-100 border border-amber-200 dark:bg-amber-900/30 dark:border-amber-800/50' },
+            { label: 'ظهراً + مساءً',   cls: 'bg-orange-100 border border-orange-200 dark:bg-orange-900/30 dark:border-orange-800/50' },
+            { label: 'مساءً',           cls: 'bg-violet-100 border border-violet-200 dark:bg-violet-900/30 dark:border-violet-800/50' },
+            { label: 'اليوم كاملاً',    cls: 'bg-red-100 border border-red-200 dark:bg-red-900/30 dark:border-red-800/50' },
           ].map(({ label, cls }) => (
             <div key={label} className="flex items-center gap-1.5">
               <span className={`w-4 h-4 rounded ${cls}`} />
               <span className="text-muted-foreground">{label}</span>
             </div>
           ))}
-          <div className="w-full border-t border-border/30 my-1" />
+          <div className="hidden sm:block w-full border-t border-border/30" />
           {[
             { label: 'رمضان (تقريبي)', emoji: '🌙', ring: 'ring-2 ring-indigo-400' },
             { label: 'عيد الفطر / الأضحى', emoji: '🌙', ring: 'ring-2 ring-purple-400' },
@@ -128,7 +133,7 @@ export default function CalendarGrid({ bookings }: { bookings: Booking[] }) {
       </div>
 
       {/* All months with events */}
-      <div className="space-y-10">
+      <div className="grid grid-cols-1 gap-x-8 gap-y-8 md:grid-cols-2 xl:grid-cols-3">
         {monthsWithEvents.map(month => {
           const days = eachDayOfInterval({ start: startOfMonth(month), end: endOfMonth(month) });
           const firstCol = DAY_TO_COL[getDay(days[0])];
@@ -141,13 +146,14 @@ export default function CalendarGrid({ bookings }: { bookings: Booking[] }) {
               </h3>
               {/* Weekday headers - starts Saturday */}
               <div className="grid grid-cols-7 gap-1 mb-1">
-                {WEEKDAY_LABELS.map((label, i) => (
+                {WEEKDAYS.map(({ full, short }, i) => (
                   <div
-                    key={label}
+                    key={full}
                     className={`text-center text-xs font-body font-semibold py-1.5 rounded
                       ${i === 0 || i === 6 ? 'text-primary font-bold' : 'text-muted-foreground'}`}
                   >
-                    {label}
+                    <span aria-hidden="true" className="lg:hidden">{short}</span>
+                    <span className="sr-only lg:not-sr-only">{full}</span>
                   </div>
                 ))}
               </div>

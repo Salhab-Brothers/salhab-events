@@ -10,6 +10,8 @@ declare global {
   }
 }
 
+// The normal widget is 300px wide; the narrowest phones get the 150px compact one instead.
+const NORMAL_WIDTH = 300;
 const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
 
 let scriptPromise: Promise<void> | null = null;
@@ -38,6 +40,7 @@ export default function Captcha({ onToken }: { onToken: (token: string | null) =
       if (cancelled || !box.current || !window.turnstile) return;
       widget = window.turnstile.render(box.current, {
         sitekey: siteKey,
+        size: box.current.clientWidth >= NORMAL_WIDTH ? 'normal' : 'compact',
         callback: (t: string) => onToken(t),
         'expired-callback': () => onToken(null),
         'error-callback': () => onToken(null),
@@ -49,5 +52,5 @@ export default function Captcha({ onToken }: { onToken: (token: string | null) =
     };
   }, [siteKey, onToken]);
 
-  return siteKey ? <div ref={box} className="flex justify-center" /> : null;
+  return siteKey ? <div ref={box} data-testid="captcha" className="-mx-3 flex justify-center sm:mx-0" /> : null;
 }

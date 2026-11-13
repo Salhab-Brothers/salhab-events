@@ -111,80 +111,83 @@ export default function DownloadEventsImage({ bookings, onRefresh }: DownloadEve
         </div>
       </div>
 
-      {/* Printable card */}
-      <div
-        ref={ref}
-        data-printable="1"
-        dir="rtl"
-        style={{
-          fontFamily: "'Tahoma', 'Arial', sans-serif",
-          WebkitFontSmoothing: 'antialiased',
-          MozOsxFontSmoothing: 'grayscale',
-          background: 'linear-gradient(135deg, #fdf8f0 0%, #f5ede0 100%)',
-          padding: '56px 48px',
-          borderRadius: '16px',
-          maxWidth: '960px',
-          width: '960px',
-          border: '2px solid #e8d8c0',
-          boxSizing: 'border-box',
-        }}
-      >
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '36px', borderBottom: '3px solid #c8a96e', paddingBottom: '28px' }}>
-          <p data-canvas-font="1" style={{ fontFamily: CANVAS_FONT, fontSize: '16px', color: '#8a7060', marginBottom: '8px' }}>
-            نظام حجوزات
-          </p>
-          <h1 data-canvas-font="1" style={{ fontFamily: CANVAS_FONT, fontSize: '42px', fontWeight: '800', color: '#1a3a3a', margin: '0 0 8px' }}>
-            أفراح آل سلهب
-          </h1>
-          <p style={{ fontSize: '18px', color: '#8a7060', margin: 0 }}>
-            جدول المناسبات القادمة - {today.getDate()} {LEVANTINE_MONTHS[today.getMonth()]}، {today.getMonth() + 1} / {today.getFullYear()}
-          </p>
-        </div>
+      {/* Printable card. The image is always 960px wide, so on a small screen the preview scrolls
+          sideways inside its own box instead of stretching the whole page. */}
+      <div role="region" aria-label="معاينة الصورة" tabIndex={0} className="overflow-x-auto rounded-2xl pb-2">
+        <div
+          ref={ref}
+          data-printable="1"
+          dir="rtl"
+          style={{
+            fontFamily: "'Tahoma', 'Arial', sans-serif",
+            WebkitFontSmoothing: 'antialiased',
+            MozOsxFontSmoothing: 'grayscale',
+            background: 'linear-gradient(135deg, #fdf8f0 0%, #f5ede0 100%)',
+            padding: '56px 48px',
+            borderRadius: '16px',
+            maxWidth: '960px',
+            width: '960px',
+            border: '2px solid #e8d8c0',
+            boxSizing: 'border-box',
+          }}
+        >
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: '36px', borderBottom: '3px solid #c8a96e', paddingBottom: '28px' }}>
+            <p data-canvas-font="1" style={{ fontFamily: CANVAS_FONT, fontSize: '16px', color: '#8a7060', marginBottom: '8px' }}>
+              نظام حجوزات
+            </p>
+            <h1 data-canvas-font="1" style={{ fontFamily: CANVAS_FONT, fontSize: '42px', fontWeight: '800', color: '#1a3a3a', margin: '0 0 8px' }}>
+              أفراح آل سلهب
+            </h1>
+            <p style={{ fontSize: '18px', color: '#8a7060', margin: 0 }}>
+              جدول المناسبات القادمة - {today.getDate()} {LEVANTINE_MONTHS[today.getMonth()]}، {today.getMonth() + 1} / {today.getFullYear()}
+            </p>
+          </div>
 
-        {/* Events list */}
-        {upcoming.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#8a7060', fontSize: '20px', padding: '48px 0' }}>لا توجد مناسبات قادمة</p>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#e8d8c0' }}>
-                {['اليوم', 'التاريخ', 'المناسبة', 'وقت', 'الديوان'].map(h => (
-                  <th key={h} style={{
-                    padding: '14px 16px',
-                    fontSize: '16px',
-                    fontWeight: '700',
-                    color: '#5a3e2a',
-                    textAlign: 'right',
-                    borderBottom: '2px solid #c8a96e',
-                  }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {upcoming.map((b, i) => {
-                const d = parseISO(b.date);
-                const dow = d.getDay();
-                const isFriSat = dow === 5 || dow === 6;
-                return (
-                  <tr key={b.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(200,169,110,0.08)' }}>
-                    <td style={{ padding: '12px 16px', fontSize: '17px', color: isFriSat ? '#0d5555' : '#3a2a1a', fontWeight: isFriSat ? '700' : '500', borderBottom: '2px solid #e8d8c0', whiteSpace: 'nowrap' }}>{WEEKDAY_AR[dow]}</td>
-                    <td style={{ padding: '12px 16px', fontSize: '17px', color: '#5a3e2a', borderBottom: '2px solid #e8d8c0', whiteSpace: 'nowrap', direction: 'ltr', textAlign: 'right' }}>{format(d, 'dd/MM/yyyy')}</td>
-                    <td style={{ padding: '12px 16px', fontSize: '18px', fontWeight: '700', color: '#1a2a2a', borderBottom: '2px solid #e8d8c0' }}>{b.event_name}</td>
-                    <td style={{ padding: '12px 16px', fontSize: '16px', color: (b.time_slot === 'lunch' || b.time_slot === 'morning') ? '#a05a00' : b.time_slot === 'afternoon' ? '#1e40af' : b.time_slot === 'full' ? '#991b1b' : '#5b21b6', borderBottom: '2px solid #e8d8c0', whiteSpace: 'nowrap', fontWeight: '600' }}>{TIME_SLOT_LABELS[b.time_slot]}</td>
-                    <td style={{ padding: '12px 16px', fontSize: '18px', textAlign: 'center', borderBottom: '2px solid #e8d8c0' }}>{b.book_diwan ? '✅' : '-'}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
+          {/* Events list */}
+          {upcoming.length === 0 ? (
+            <p style={{ textAlign: 'center', color: '#8a7060', fontSize: '20px', padding: '48px 0' }}>لا توجد مناسبات قادمة</p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#e8d8c0' }}>
+                  {['اليوم', 'التاريخ', 'المناسبة', 'وقت', 'الديوان'].map(h => (
+                    <th key={h} style={{
+                      padding: '14px 16px',
+                      fontSize: '16px',
+                      fontWeight: '700',
+                      color: '#5a3e2a',
+                      textAlign: 'right',
+                      borderBottom: '2px solid #c8a96e',
+                    }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {upcoming.map((b, i) => {
+                  const d = parseISO(b.date);
+                  const dow = d.getDay();
+                  const isFriSat = dow === 5 || dow === 6;
+                  return (
+                    <tr key={b.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(200,169,110,0.08)' }}>
+                      <td style={{ padding: '12px 16px', fontSize: '17px', color: isFriSat ? '#0d5555' : '#3a2a1a', fontWeight: isFriSat ? '700' : '500', borderBottom: '2px solid #e8d8c0', whiteSpace: 'nowrap' }}>{WEEKDAY_AR[dow]}</td>
+                      <td style={{ padding: '12px 16px', fontSize: '17px', color: '#5a3e2a', borderBottom: '2px solid #e8d8c0', whiteSpace: 'nowrap', direction: 'ltr', textAlign: 'right' }}>{format(d, 'dd/MM/yyyy')}</td>
+                      <td style={{ padding: '12px 16px', fontSize: '18px', fontWeight: '700', color: '#1a2a2a', borderBottom: '2px solid #e8d8c0' }}>{b.event_name}</td>
+                      <td style={{ padding: '12px 16px', fontSize: '16px', color: (b.time_slot === 'lunch' || b.time_slot === 'morning') ? '#a05a00' : b.time_slot === 'afternoon' ? '#1e40af' : b.time_slot === 'full' ? '#991b1b' : '#5b21b6', borderBottom: '2px solid #e8d8c0', whiteSpace: 'nowrap', fontWeight: '600' }}>{TIME_SLOT_LABELS[b.time_slot]}</td>
+                      <td style={{ padding: '12px 16px', fontSize: '18px', textAlign: 'center', borderBottom: '2px solid #e8d8c0' }}>{b.book_diwan ? '✅' : '-'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
 
-        {/* Footer */}
-        <div style={{ textAlign: 'center', marginTop: '32px', paddingTop: '20px', borderTop: '2px solid #c8a96e' }}>
-          <p style={{ fontSize: '14px', color: '#a08060', margin: 0 }}>
-            نظام حجوزات آل سلهب - تم الإنشاء بتاريخ {format(today, 'yyyy/MM/dd')}
-          </p>
+          {/* Footer */}
+          <div style={{ textAlign: 'center', marginTop: '32px', paddingTop: '20px', borderTop: '2px solid #c8a96e' }}>
+            <p style={{ fontSize: '14px', color: '#a08060', margin: 0 }}>
+              نظام حجوزات آل سلهب - تم الإنشاء بتاريخ {format(today, 'yyyy/MM/dd')}
+            </p>
+          </div>
         </div>
       </div>
     </div>

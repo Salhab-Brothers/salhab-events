@@ -10,7 +10,7 @@ export default function CalendarPage({ bookings }: { bookings: Booking[] }) {
         <p className="font-body text-muted-foreground text-sm">عرض الأيام المحجوزة والمتاحة للأشهر القادمة</p>
       </div>
       <SummaryBar bookings={bookings} />
-      <div className="bg-card border border-border/50 rounded-2xl p-4 sm:p-6 shadow-sm">
+      <div className="bg-card border border-border/50 rounded-2xl p-3 sm:p-6 shadow-sm">
         <CalendarGrid bookings={bookings} />
       </div>
     </div>

@@ -5,7 +5,7 @@ import { freeSlots, isSlotFree, nextFreeDays, nextFreeWeekend } from '@/lib/avai
 import { TIME_SLOT_LABELS, type CanonicalSlot } from '@/lib/data';
 import type { Booking } from '@/types';
 
-const chip = 'h-auto min-h-9 font-body text-xs';
+const chip = 'h-auto min-h-9 whitespace-normal py-1.5 font-body text-xs';
 
 /** Under the date and time of a request: says whether the choice is free and offers a way out when it is not. */
 export default function AvailabilityHint({ bookings, date, slot, today, onPick }: {

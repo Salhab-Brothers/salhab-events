@@ -1,12 +1,21 @@
-# Proves the backups in the bucket can really be used: takes the NEWEST file from the private R2
-# bucket, decrypts it with the passphrase, restores it into a scratch Postgres, and checks the
-# row counts. The backup job tests the dump it has just made; this tests what was stored.
-# Runs monthly and on demand. Uses the same repository secrets as backup.yml.
+# Proves the backups in the bucket can really be used, end to end: takes the NEWEST file from the
+# private R2 bucket, decrypts it with the passphrase, restores it into a real (local) Supabase
+# stack with the steps from the README, then checks the data, the privacy rules and an admin login
+# through the API, and finally opens the site in a browser. The backup job tests the dump it has
+# just made; this tests what was stored. Runs monthly and on demand, with the secrets of backup.yml.
 name: restore-drill
 on:
   schedule:
     - cron: '0 5 1 * *'
   workflow_dispatch:
+  # A change to the drill itself is rehearsed against the real bucket before it is merged.
+  pull_request:
+    paths:
+      - .github/workflows/restore-drill.yml
+      - scripts/restore-drill.mjs
+      - scripts/prepare-restore.sh
+      - scripts/verify-backup.sh
+      - e2e/restore.spec.ts
 
 permissions:
   contents: read
@@ -42,3 +51,18 @@ jobs:
           grep -q 'CREATE TABLE public.bookings' backup.sql || { echo "decrypted file does not look like a dump"; exit 1; }
       - name: Restore into a scratch database and compare row counts
         run: scripts/verify-backup.sh backup.sql
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Start a real Supabase stack (the new, empty project)
+        run: npm run e2e:db
+      - name: Restore the backup the way the README describes, and check it through the API
+        run: node scripts/restore-drill.mjs backup.sql
+      - name: Open the restored site in a browser
+        run: npx playwright test --project=restore
+      - name: Remove the decrypted dump
+        if: always()
+        run: shred -u backup.sql .restore-expected.json || true

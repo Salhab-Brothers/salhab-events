@@ -20,7 +20,7 @@ export default defineConfig({
   reporter: process.env.CI ? [['github'], ['list'], ['html', { open: 'never' }]] : 'list',
   use: { baseURL: remote ?? `http://localhost:${PORT}`, trace: 'retain-on-failure', locale: 'ar' },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /(pwa|visual|responsive|text-size)\.spec\.ts/ },
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /(pwa|visual|responsive|text-size|restore)\.spec\.ts/ },
     // The layout sweep is its own project so CI can run it in a job of its own (it is the longest spec).
     { name: 'responsive', use: { ...devices['Desktop Chrome'] }, testMatch: /responsive\.spec\.ts/ },
     { name: 'pwa', use: { ...devices['Desktop Chrome'], baseURL: remote ?? `http://localhost:${PWA_PORT}` }, testMatch: /pwa\.spec\.ts/ },
@@ -34,6 +34,8 @@ export default defineConfig({
     { name: 'safari', use: { ...devices['Desktop Safari'] }, testMatch: /(public|admin|routing|smoke)\.spec\.ts/ },
     // Firefox's engine, the third one real people use. Behaviour specs only; accessibility is engine independent.
     { name: 'firefox', use: { ...devices['Desktop Firefox'] }, testMatch: /(public|admin|routing|smoke|keyboard|text-size)\.spec\.ts/ },
+    // Run by the restore drill (.github/workflows/restore-drill.yml) after a backup has been restored; it needs that data.
+    { name: 'restore', use: { ...devices['Desktop Chrome'] }, testMatch: /restore\.spec\.ts/ },
     { name: 'iphone', use: { ...devices['iPhone 15'] }, testMatch: /(smoke|routing)\.spec\.ts/ },
   ],
   // The local backend (npm run e2e:db) already serves the submit function.

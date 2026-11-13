@@ -51,3 +51,4 @@ test-results/
 
 # local credentials and one-off SQL with passwords
 secrets/
+.restore-expected.json

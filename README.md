@@ -88,7 +88,17 @@ One-time setup:
 2. R2, Manage API tokens: create a token with Object Read and Write, limited to that bucket only.
 3. Repository secrets: `SUPABASE_DB_URL` (Supabase, Connect, **Session pooler** connection string with your database password; the direct host is IPv6 only and GitHub runners cannot reach it), `BACKUP_PASSPHRASE` (keep a copy in a password manager; without it a backup cannot be opened), `R2_ENDPOINT` (`https://<account id>.r2.cloudflarestorage.com`), `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`.
 
-Run it once from the Actions tab to check it works. To restore: download the file from the bucket, `gpg -d db-....sql.gpg > backup.sql`, and run the SQL on an empty project (SQL Editor, or `psql`). `.github/workflows/restore-drill.yml` does this from the bucket once a month (newest file, decrypt, restore into a scratch database, compare row counts) and fails if the newest backup is more than 5 days old; run it from the Actions tab after changing any backup secret. Restoring into a real Supabase project is still worth trying once on a scratch project.
+Run it once from the Actions tab to check it works.
+
+**Restoring** (on a new, empty Supabase project, or after a disaster):
+
+1. Download the newest file from the bucket and decrypt it: `gpg -d db-....sql.gpg > backup.sql` (the passphrase is `BACKUP_PASSPHRASE`).
+2. `scripts/prepare-restore.sh backup.sql > restore.sql`. It leaves out two things a plain restore would choke on: the admins rows (they point at logins that a new project does not have) and `ALTER DEFAULT PRIVILEGES` lines (Supabase does not let you run them).
+3. Run `restore.sql` on the database: `psql "$SUPABASE_DB_URL" -c 'drop schema public cascade' -f restore.sql` (the dump creates the schema again). Or paste it into the SQL Editor after running `drop schema public cascade;`.
+4. Re-create the admin logins as under "Admin accounts" (Authentication, Add user, then the `insert into public.admins` SQL).
+5. Deploy the `submit` function and set its secrets again if the project is new (see "Deploying the backend").
+
+`.github/workflows/restore-drill.yml` rehearses exactly this once a month, from the bucket: newest file, decrypt, restore into a local Supabase stack with these steps, then check row counts, the privacy rules (visitors see no phone numbers and no requests), an admin sign-in and the site in a browser. It also fails when the newest backup is more than 5 days old. Run it from the Actions tab after changing any backup secret. To try it on your own computer: `npm run e2e:db`, then `node scripts/restore-drill.mjs backup.sql` and `npx playwright test --project=restore`. The one thing it cannot rehearse is a real new Supabase project (point 5, and the Supabase-side secrets).
 
 ## Deploying the backend
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AdminAuth from '@/components/AdminAuth';
@@ -26,6 +26,7 @@ export default function Home() {
   const [initialized, setInitialized] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const { isAdmin, loading: adminLoading } = useIsAdmin();
+  const mainRef = useRef<HTMLElement>(null);
 
   // Requests and full booking rows are admin-only; visitors load public columns.
   // Re-created when the admin state changes, which re-runs the load effect below.
@@ -125,13 +126,22 @@ export default function Home() {
 
   return (
     <div className="min-h-dvh bg-background">
+      {/* First stop for keyboard users: jump past the navigation. Not a link to "#main-content" because the
+          address bar's hash is the page router. */}
+      <a
+        href="#main-content"
+        onClick={(e) => { e.preventDefault(); mainRef.current?.focus(); }}
+        className="sr-only focus:not-sr-only focus:fixed focus:start-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground"
+      >
+        انتقل إلى المحتوى
+      </a>
       <Navbar
         activePage={activePage}
         setActivePage={handlePageChange}
         theme={theme}
         toggleTheme={toggle}
       />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <main id="main-content" ref={mainRef} tabIndex={-1} className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 focus:outline-none">
         <Suspense fallback={<div className="min-h-[40vh]" />}>{renderPage()}</Suspense>
       </main>
       <Footer />

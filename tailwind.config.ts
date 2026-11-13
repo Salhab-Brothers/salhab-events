@@ -5,6 +5,9 @@ export default {
   darkMode: ["class"],
   content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
   theme: {
+    // In rem, not px: a reader who raises the browser's text size gets the compact layout sooner
+    // instead of a desktop layout that no longer fits. At the default size these are 640/768/1024/1280/1536px.
+    screens: { sm: '40rem', md: '48rem', lg: '64rem', xl: '80rem', '2xl': '96rem' },
     extend: {
       borderRadius: {
         lg: 'var(--radius)',

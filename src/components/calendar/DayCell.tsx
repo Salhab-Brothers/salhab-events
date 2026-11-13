@@ -52,6 +52,7 @@ export default function DayCell({ day, dateStr, status, isToday, isFriSat, hasBo
         ${islamicStyle && !isToday ? ISLAMIC_RING[islamicStyle] : ''}
       `}
       title={islamicEvents.map(e => e.label).join(' | ') || dateStr}
+      data-date={dateStr}
     >
       <span className={`text-xs sm:text-sm font-heading font-semibold leading-none ${isToday ? 'text-primary' : ''}`}>
         {dayNum}

@@ -106,6 +106,24 @@ describe('DayDetailModal', () => {
     await userEvent.click(container.firstElementChild!);
     expect(base.onClose).toHaveBeenCalledTimes(3);
   });
+
+  it('is a labelled dialog that closes with Escape and gives focus back to what opened it', () => {
+    const opener = document.createElement('button');
+    document.body.appendChild(opener);
+    opener.focus();
+    const onClose = vi.fn();
+    const { unmount } = render(<DayDetailModal {...base} onClose={onClose} />);
+    const dialog = screen.getByRole('dialog', { hidden: true });
+    expect(dialog).toHaveAccessibleName(/2026/);
+    // Escape asks the dialog to cancel; the page decides to close it (and the default close is prevented).
+    const cancel = new Event('cancel', { cancelable: true });
+    dialog.dispatchEvent(cancel);
+    expect(cancel.defaultPrevented).toBe(true);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    unmount();
+    expect(opener).toHaveFocus();
+    opener.remove();
+  });
 });
 
 describe('CalendarGrid', () => {

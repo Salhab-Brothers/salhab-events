@@ -71,3 +71,14 @@ test('the submit function rejects a request with no captcha token', async ({ req
   const { data } = await service.from('reviews').select('id');
   expect(data).toHaveLength(0);
 });
+
+test('the dark mode choice survives a reload', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'الوضع الداكن' }).click();
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await page.reload();
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await page.getByRole('button', { name: 'الوضع الفاتح' }).click();
+  await page.reload();
+  await expect(page.locator('html')).not.toHaveClass(/dark/);
+});

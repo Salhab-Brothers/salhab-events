@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { format, parseISO, isAfter, startOfToday } from 'date-fns';
 import { LEVANTINE_MONTHS } from '@/lib/levantineMonths';
 import { Download, RefreshCw } from 'lucide-react';
@@ -25,6 +25,9 @@ function formatTimestampAr(date: string) {
   return `آخر تحديث: ${day}، ${dateNum} ${month} ${year} الساعة ${h}:${m} ${ampm}`;
 }
 
+// The exported image is always laid out 960px wide (and drawn at 4x); the preview on screen is only scaled to fit.
+const CARD_WIDTH = 960;
+
 // Safe web font for canvas rendering
 const CANVAS_FONT = "'Tahoma', 'Arial', sans-serif";
 
@@ -35,6 +38,8 @@ interface DownloadEventsImageProps {
 
 export default function DownloadEventsImage({ bookings, onRefresh }: DownloadEventsImageProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const frame = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState({ scale: 1, height: 0 });
   const [loading, setLoading] = useState(false);
   const [timestamp, setTimestamp] = useState(() => localStorage.getItem(TIMESTAMP_KEY) || null);
   const today = startOfToday();
@@ -42,6 +47,24 @@ export default function DownloadEventsImage({ bookings, onRefresh }: DownloadEve
   const upcoming = bookings
     .filter(b => b.status !== 'cancelled' && (isAfter(parseISO(b.date), today) || b.date === format(today, 'yyyy-MM-dd')))
     .sort((a, b) => a.date.localeCompare(b.date));
+
+  // Shrinks the on-screen preview to the width available (never enlarges it). Only the look changes:
+  // the card keeps its 960px layout, and the export below undoes the scaling in its own copy.
+  useLayoutEffect(() => {
+    const card = ref.current;
+    const box = frame.current;
+    if (!card || !box) return;
+    const measure = () => {
+      const scale = box.clientWidth > 0 ? Math.min(1, box.clientWidth / CARD_WIDTH) : 1;
+      setFit(prev => (prev.scale === scale && prev.height === card.offsetHeight * scale ? prev : { scale, height: card.offsetHeight * scale }));
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(box);
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, [upcoming.length]);
 
   const updateTimestamp = () => {
     const now = new Date().toISOString();
@@ -62,7 +85,13 @@ export default function DownloadEventsImage({ bookings, onRefresh }: DownloadEve
         const el = doc.querySelector<HTMLElement>('[data-printable]');
         if (el) {
           el.style.maxWidth = 'none';
-          el.style.width = '960px';
+          el.style.width = `${CARD_WIDTH}px`;
+          // The picture is the full-size card: drop the preview's scaling and clipping in this copy.
+          el.style.transform = 'none';
+          for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+            parent.style.overflow = 'visible';
+            parent.style.height = 'auto';
+          }
         }
         const headers = doc.querySelectorAll<HTMLElement>('[data-canvas-font]');
         headers.forEach(h => { h.style.fontFamily = CANVAS_FONT; });
@@ -94,7 +123,7 @@ export default function DownloadEventsImage({ bookings, onRefresh }: DownloadEve
             <p className="font-body text-xs text-primary/70 mt-1">{formatTimestampAr(timestamp)}</p>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             onClick={handleRefresh}
@@ -111,9 +140,8 @@ export default function DownloadEventsImage({ bookings, onRefresh }: DownloadEve
         </div>
       </div>
 
-      {/* Printable card. The image is always 960px wide, so on a small screen the preview scrolls
-          sideways inside its own box instead of stretching the whole page. */}
-      <div role="region" aria-label="معاينة الصورة" tabIndex={0} className="overflow-x-auto rounded-2xl pb-2">
+      {/* Printable card. The image is always 960px wide; on a smaller screen the preview is scaled down to fit. */}
+      <div ref={frame} className="w-full overflow-hidden" style={{ height: fit.height || undefined }}>
         <div
           ref={ref}
           data-printable="1"
@@ -125,8 +153,10 @@ export default function DownloadEventsImage({ bookings, onRefresh }: DownloadEve
             background: 'linear-gradient(135deg, #fdf8f0 0%, #f5ede0 100%)',
             padding: '56px 48px',
             borderRadius: '16px',
-            maxWidth: '960px',
-            width: '960px',
+            maxWidth: `${CARD_WIDTH}px`,
+            width: `${CARD_WIDTH}px`,
+            transform: `scale(${fit.scale})`,
+            transformOrigin: 'top right',
             border: '2px solid #e8d8c0',
             boxSizing: 'border-box',
           }}

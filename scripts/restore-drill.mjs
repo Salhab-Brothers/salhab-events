@@ -43,7 +43,7 @@ psql(`insert into public.admins (user_id) select id from auth.users where email 
 // 2. Everything is back.
 for (const [table, n] of Object.entries(expected)) {
   const { count, error } = await service.from(table).select('*', { count: 'exact', head: true });
-  check(!error && count === n, `${table}: ${count} rows restored, backup holds ${n}`);
+  check(!error && count === n, `${table}: ${count} rows restored, backup holds ${n}${error ? ` (${error.message})` : ''}`);
 }
 
 // 3. The privacy rules came back with the data.

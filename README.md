@@ -164,5 +164,5 @@ Import the repo in Vercel (Vite preset) and set `VITE_SUPABASE_URL` and `VITE_SU
 ## Known limits
 
 - Overlapping bookings are allowed on purpose (family events).
-- Holiday warnings are hardcoded for 2026 to 2027 (`src/lib/islamicDates.js`) and need updating after that.
+- Holiday warnings are worked out from the browser's Umm al-Qura calendar (`src/lib/islamicDates.ts`), from last year to four years ahead; nothing to update by hand. They are approximate, since the real day depends on the moon.
 - Lists load up to 1000 rows.

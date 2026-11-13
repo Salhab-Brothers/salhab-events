@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  ISLAMIC_EVENTS_2026, buildIslamicDateMap, getIslamicEvents, getIslamicStyle,
+  ISLAMIC_EVENTS, computeIslamicEvents, buildIslamicDateMap, getIslamicEvents, getIslamicStyle,
 } from './islamicDates';
 
 describe('islamicDates', () => {
@@ -42,7 +42,7 @@ describe('islamicDates', () => {
   it('crosses month boundaries when building ranges', () => {
     const map = buildIslamicDateMap();
     expect(map['2027-05-19']).toBeDefined();
-    expect(ISLAMIC_EVENTS_2026.length).toBe(8);
+    expect(ISLAMIC_EVENTS.length).toBeGreaterThanOrEqual(8);
   });
 
   it('picks a display style by priority', () => {
@@ -52,5 +52,25 @@ describe('islamicDates', () => {
     expect(getIslamicStyle([{ type: 'arafah' }])).toBe('arafah');
     expect(getIslamicStyle([{ type: 'ramadan_start' }])).toBe('ramadan');
     expect(getIslamicStyle([{ type: 'other' as never }])).toBeNull();
+  });
+});
+
+describe('computeIslamicEvents', () => {
+  it('works out the same days for 2026 as the list this replaced', () => {
+    const got = computeIslamicEvents([2026]).map(({ date, type, days }) => ({ date, type, days }));
+    expect(got).toEqual([
+      { date: '2026-02-17', type: 'ramadan_start', days: 1 },
+      { date: '2026-03-19', type: 'eid_fitr', days: 4 },
+      { date: '2026-05-26', type: 'arafah', days: 1 },
+      { date: '2026-05-27', type: 'eid_adha', days: 5 },
+    ]);
+  });
+  it('finds a Hijri date that falls twice in one year (Ramadan 2030 begins in January and December)', () => {
+    expect(computeIslamicEvents([2030]).filter((e) => e.type === 'ramadan_start')).toHaveLength(2);
+  });
+  it('covers last year and the next four, so no hand updating is needed', () => {
+    const years = new Set(ISLAMIC_EVENTS.map((e) => e.date.slice(0, 4)));
+    const now = new Date().getFullYear();
+    for (let y = now - 1; y <= now + 4; y++) expect(years.has(String(y))).toBe(true);
   });
 });

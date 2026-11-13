@@ -35,8 +35,7 @@ test('booking request goes through the captcha and is stored as pending', async 
 });
 
 test('review waits for approval and is hidden from the public list', async ({ page }) => {
-  await page.goto('/');
-  await nav(page, 'التقييمات');
+  await page.goto('/#/reviews');   // no menu entry yet: nothing has been approved
   await page.getByLabel('اسمك').fill('سارة');
   await page.getByRole('button', { name: '5 من 5' }).click();
   await page.getByLabel('تعليقك').fill('تجربة ممتازة');
@@ -81,4 +80,20 @@ test('the dark mode choice survives a reload', async ({ page }) => {
   await page.getByRole('button', { name: 'الوضع الفاتح' }).click();
   await page.reload();
   await expect(page.locator('html')).not.toHaveClass(/dark/);
+});
+
+test('the Reviews menu entry appears only after a review is approved', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'المناسبات' }).first()).toBeVisible();
+  await page.waitForTimeout(1000);   // the check for reviews has had time to finish
+  await expect(page.getByRole('button', { name: 'التقييمات' })).toHaveCount(0);
+
+  await service.from('reviews').insert({ reviewer_name: 'ليلى', rating: 5, comment: 'جميل', approved: false });
+  await page.reload();
+  await page.waitForTimeout(1000);
+  await expect(page.getByRole('button', { name: 'التقييمات' })).toHaveCount(0);   // waiting for approval is not enough
+
+  await service.from('reviews').update({ approved: true }).eq('reviewer_name', 'ليلى');
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'التقييمات' }).first()).toBeVisible();
 });

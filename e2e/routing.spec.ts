@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { nav } from './nav';
+import { resetData, service } from './helpers';
 
 test('a page address opens that page, and survives a reload', async ({ page }) => {
   await page.goto('/#/reviews');
@@ -9,6 +10,9 @@ test('a page address opens that page, and survives a reload', async ({ page }) =
 });
 
 test('the address follows navigation, and back and forward work', async ({ page }) => {
+  // The Reviews menu entry only exists once a review has been approved.
+  await resetData();
+  await service.from('reviews').insert({ reviewer_name: 'ليلى', rating: 5, approved: true });
   await page.goto('/');
   await nav(page, 'طلب حجز');
   await expect(page).toHaveURL(/#\/request$/);

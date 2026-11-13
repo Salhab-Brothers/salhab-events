@@ -3,15 +3,16 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@/test/user';
 import { makeBooking, makeRequest } from '@/test/factories';
 
-const { Booking, BookingRequest, adminState, signOutAdmin } = vi.hoisted(() => ({
+const { Booking, BookingRequest, Review, adminState, signOutAdmin } = vi.hoisted(() => ({
   Booking: { list: vi.fn() },
+  Review: { list: vi.fn() },
   BookingRequest: { list: vi.fn() },
   adminState: { isAdmin: false, loading: false },
   signOutAdmin: vi.fn(),
 }));
 
 vi.mock('@/api/api', () => ({
-  entities: { Booking, BookingRequest },
+  entities: { Booking, BookingRequest, Review },
   PUBLIC_BOOKING_COLUMNS: 'public-cols',
 }));
 vi.mock('@/lib/adminSession', () => ({ useIsAdmin: () => adminState, signOutAdmin }));
@@ -48,6 +49,7 @@ beforeEach(() => {
   adminState.loading = false;
   Booking.list.mockResolvedValue([makeBooking({ id: '1' }), makeBooking({ id: '2' })]);
   BookingRequest.list.mockResolvedValue([makeRequest()]);
+  Review.list.mockResolvedValue([{ id: 'r1', approved: true }]);
 });
 
 describe('Home: loading', () => {
@@ -86,6 +88,39 @@ describe('Home: loading', () => {
     expect(screen.getByText('request-page')).toBeInTheDocument();
     await userEvent.click(nav('التقييمات'));
     expect(screen.getByText('reviews-page')).toBeInTheDocument();
+  });
+});
+
+describe('Home: the Reviews menu entry', () => {
+  const reviewsEntries = () => screen.queryAllByRole('button', { name: 'التقييمات' });
+
+  it('is hidden until there is an approved review', async () => {
+    Review.list.mockResolvedValue([]);
+    render(<Home />);
+    await screen.findByText('calendar:2');
+    expect(reviewsEntries()).toHaveLength(0);
+  });
+
+  it('stays hidden while the only reviews are waiting for approval', async () => {
+    Review.list.mockResolvedValue([{ id: 'r1', approved: false }]);
+    render(<Home />);
+    await screen.findByText('calendar:2');
+    expect(reviewsEntries()).toHaveLength(0);
+  });
+
+  it('appears once a review is approved', async () => {
+    render(<Home />);
+    await screen.findByText('calendar:2');
+    await waitFor(() => expect(reviewsEntries().length).toBeGreaterThan(0));
+  });
+
+  it('stays hidden if the check fails, and the page still opens from its address', async () => {
+    Review.list.mockRejectedValue(new Error('offline'));
+    window.location.hash = '#/reviews';
+    render(<Home />);
+    expect(await screen.findByText('reviews-page')).toBeInTheDocument();
+    expect(reviewsEntries().filter(b => b.getAttribute('aria-current') !== 'page')).toHaveLength(0);
+    window.location.hash = '';
   });
 });
 

@@ -4,14 +4,14 @@ import userEvent from '@/test/user';
 import Navbar from './Navbar';
 import type { PageId, Theme } from '@/types';
 
-const setup = (over: { activePage?: PageId; theme?: Theme } = {}) => {
+const setup = (over: { activePage?: PageId; theme?: Theme; showReviews?: boolean } = {}) => {
   const setActivePage = vi.fn();
   const toggleTheme = vi.fn();
-  render(
+  const { unmount } = render(
     <Navbar activePage={over.activePage ?? 'calendar'} setActivePage={setActivePage}
-      theme={over.theme ?? 'light'} toggleTheme={toggleTheme} />,
+      theme={over.theme ?? 'light'} toggleTheme={toggleTheme} showReviews={over.showReviews} />,
   );
-  return { setActivePage, toggleTheme };
+  return { setActivePage, toggleTheme, unmount };
 };
 
 describe('Navbar', () => {
@@ -22,6 +22,14 @@ describe('Navbar', () => {
     expect(setActivePage).toHaveBeenCalledWith('events');
     await userEvent.click(nav.getByText('الإدارة'));
     expect(setActivePage).toHaveBeenCalledWith('admin');
+  });
+
+  it('leaves the Reviews entry out when asked to, unless that is the open page', () => {
+    const { unmount } = setup({ showReviews: false });
+    expect(screen.queryByText('التقييمات')).toBeNull();
+    unmount();
+    setup({ showReviews: false, activePage: 'reviews' });
+    expect(screen.getByText('التقييمات')).toBeInTheDocument();
   });
 
   it('highlights the active page', () => {

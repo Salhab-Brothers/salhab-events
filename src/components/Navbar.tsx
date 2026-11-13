@@ -18,10 +18,13 @@ interface NavbarProps {
   setActivePage: (page: PageId) => void;
   theme: Theme;
   toggleTheme: () => void;
+  /** The Reviews entry only appears once there is at least one approved review. */
+  showReviews?: boolean;
 }
 
-export default function Navbar({ activePage, setActivePage, theme, toggleTheme }: NavbarProps) {
+export default function Navbar({ activePage, setActivePage, theme, toggleTheme, showReviews = true }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const items = NAV_ITEMS.filter(item => item.id !== 'reviews' || showReviews || activePage === 'reviews');
 
   const handleNav = (id: PageId) => {
     setActivePage(id);
@@ -46,7 +49,7 @@ export default function Navbar({ activePage, setActivePage, theme, toggleTheme }
 
           {/* Desktop Nav */}
           <nav aria-label="التنقل الرئيسي" className="hidden lg:flex items-center gap-1">
-            {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
+            {items.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 aria-current={activePage === id ? 'page' : undefined}
@@ -94,7 +97,7 @@ export default function Navbar({ activePage, setActivePage, theme, toggleTheme }
       {menuOpen && (
         <nav id="mobile-menu" aria-label="قائمة الجوال" className="lg:hidden border-t border-border/60 bg-card animate-fade-in">
           <div className="px-4 py-3 space-y-1">
-            {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
+            {items.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 aria-current={activePage === id ? 'page' : undefined}

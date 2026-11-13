@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TIME_SLOT_LABELS, STATUS_LABELS } from '@/lib/data';
+import { EVENT_TYPES, eventTypeOf } from '@/lib/stats';
 import type { Booking, BookingStatus, TimeSlot } from '@/types';
 
 const SLOT_BADGE: Record<TimeSlot, string> = {
@@ -23,16 +24,7 @@ const STATUS_BADGE: Record<BookingStatus, string> = {
   cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
 };
 
-// Detect event type from event_name
-const detectEventType = (name: string) => {
-  if (name.includes('زفاف')) return 'زفاف';
-  if (name.includes('خطوبة') || name.includes('خطبة')) return 'خطوبة';
-  if (name.includes('طلبة') || name.includes('طلب')) return 'طلبة';
-  if (name.includes('غداء')) return 'غداء';
-  return 'أخرى';
-};
-
-const EVENT_TYPE_FILTERS = ['الكل', 'زفاف', 'خطوبة', 'طلبة', 'غداء', 'أخرى'];
+const EVENT_TYPE_FILTERS = ['الكل', ...EVENT_TYPES];
 const SLOT_FILTERS = [
   { value: 'all', label: 'الكل' },
   { value: 'lunch', label: 'ظهراً' },
@@ -99,7 +91,7 @@ export default function EventsPage({ bookings }: { bookings: Booking[] }) {
         const matchMonth = filterMonth === 'all' || b.date.startsWith(filterMonth);
         const matchSlot = filterSlot === 'all' || b.time_slot === filterSlot || (filterSlot === 'lunch' && b.time_slot === 'morning') || (filterSlot === 'wedding' && b.time_slot === 'evening');
         const matchStatus = filterStatus === 'all' || b.status === filterStatus;
-        const matchType = filterType === 'الكل' || detectEventType(b.event_name) === filterType;
+        const matchType = filterType === 'الكل' || eventTypeOf(b.event_name) === filterType;
         const matchDiwan = !filterDiwan || b.book_diwan === true;
         return matchSearch && matchMonth && matchSlot && matchStatus && matchType && matchDiwan;
       })

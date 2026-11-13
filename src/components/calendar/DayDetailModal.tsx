@@ -5,6 +5,7 @@ import { format, isBefore, startOfDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { TIME_SLOT_LABELS } from '@/lib/data';
 import EventCardDownload from '@/components/EventCardDownload';
+import AddToCalendar from '@/components/AddToCalendar';
 import type { IslamicDay, IslamicEventType } from '@/lib/islamicDates';
 import type { Booking } from '@/types';
 
@@ -95,7 +96,10 @@ export default function DayDetailModal({ day, bookings, dayOfWeek, islamicEvents
               <div key={i} className="bg-secondary/50 rounded-xl p-4 space-y-2.5">
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-heading font-bold text-foreground text-base">{booking.event_name}</p>
-                  <EventCardDownload booking={booking} size="sm" />
+                  <div className="flex shrink-0 gap-1.5">
+                    <AddToCalendar booking={booking} />
+                    <EventCardDownload booking={booking} size="sm" />
+                  </div>
                 </div>
                 <div className="space-y-1.5 text-sm font-body text-muted-foreground">
                   <div className="flex items-center gap-2">

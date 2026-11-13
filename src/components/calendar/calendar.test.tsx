@@ -75,6 +75,17 @@ describe('DayDetailModal', () => {
     expect(screen.queryByRole('link', { name: 'اطلب هذا اليوم' })).toBeNull();
   });
 
+  it('saves an event to the calendar as an .ics file', async () => {
+    const create = vi.fn(() => 'blob:x');
+    Object.assign(URL, { createObjectURL: create, revokeObjectURL: vi.fn() });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    render(<DayDetailModal {...base} bookings={[makeBooking({ date: '2026-06-19' })]} />);
+    await userEvent.click(screen.getByRole('button', { name: /تقويمي/ }));
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(click).toHaveBeenCalledTimes(1);
+    click.mockRestore();
+  });
+
   it('says the day is free and flags weekends', () => {
     render(<DayDetailModal {...base} />);
     expect(screen.getByText('هذا اليوم متاح للحجز')).toBeInTheDocument();

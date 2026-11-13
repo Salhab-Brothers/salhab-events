@@ -95,6 +95,17 @@ describe('AdminPage requests', () => {
     await waitFor(() => expect(Booking.create).toHaveBeenCalled());
   });
 
+  it('links a decided request to a ready-made WhatsApp reply, but not a pending one', () => {
+    const p = { ...props(), requests: [
+      makeRequest({ id: 'a', status: 'approved', phone: '0501234567' }),
+      makeRequest({ id: 'b', status: 'pending' }),
+    ] };
+    render(<AdminPage {...p} />);
+    const links = screen.getAllByRole('link', { name: 'رد عبر واتساب' });
+    expect(links).toHaveLength(1);
+    expect(links[0].getAttribute('href')).toMatch(/^https:\/\/wa\.me\/972501234567\?text=/);
+  });
+
   it('rejects a request', async () => {
     const p = { ...props(), requests: [makeRequest()] };
     render(<AdminPage {...p} />);

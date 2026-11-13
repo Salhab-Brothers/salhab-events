@@ -99,3 +99,51 @@ describe('DownloadEventsImage', () => {
     expect(await screen.findByText(/آخر تحديث/)).toBeInTheDocument();
   });
 });
+
+describe('DownloadEventsImage: sharing', () => {
+  const setShare = (share: unknown, canShare: unknown) => {
+    Object.defineProperty(navigator, 'share', { value: share, configurable: true });
+    Object.defineProperty(navigator, 'canShare', { value: canShare, configurable: true });
+  };
+  afterEach(() => { delete (navigator as unknown as Record<string, unknown>).share; delete (navigator as unknown as Record<string, unknown>).canShare; });
+
+  it('has no share button where the browser cannot share files', () => {
+    setShare(undefined, undefined);
+    render(<DownloadEventsImage bookings={bookings} />);
+    expect(screen.queryByRole('button', { name: 'مشاركة' })).toBeNull();
+  });
+
+  it('sends the picture to the share sheet', async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    setShare(share, () => true);
+    html2canvas.mockResolvedValue({ toBlob: (cb: (b: Blob) => void) => cb(new Blob(['x'])) });
+    render(<DownloadEventsImage bookings={bookings} />);
+    await userEvent.click(screen.getByRole('button', { name: 'مشاركة' }));
+    await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
+    expect(share.mock.calls[0][0].files[0].type).toBe('image/jpeg');
+    expect(localStorage.getItem('salhab_image_timestamp')).toBeTruthy();
+  });
+
+  it('is quiet when the share sheet is closed, and logs any other failure', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const share = vi.fn().mockRejectedValueOnce(Object.assign(new Error('x'), { name: 'AbortError' })).mockRejectedValueOnce(new Error('boom'));
+    setShare(share, () => true);
+    html2canvas.mockResolvedValue({ toBlob: (cb: (b: Blob) => void) => cb(new Blob(['x'])) });
+    render(<DownloadEventsImage bookings={bookings} />);
+    await userEvent.click(screen.getByRole('button', { name: 'مشاركة' }));
+    await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
+    expect(error).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'مشاركة' }));
+    await waitFor(() => expect(error).toHaveBeenCalled());
+  });
+
+  it('does nothing when the picture could not be made into a file', async () => {
+    const share = vi.fn();
+    setShare(share, () => true);
+    html2canvas.mockResolvedValue({ toBlob: (cb: (b: null) => void) => cb(null) });
+    render(<DownloadEventsImage bookings={bookings} />);
+    await userEvent.click(screen.getByRole('button', { name: 'مشاركة' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'مشاركة' })).toBeEnabled());
+    expect(share).not.toHaveBeenCalled();
+  });
+});

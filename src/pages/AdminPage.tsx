@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { formatFullDateStr } from '@/lib/levantineMonths';
-import { Check, X, Trash2, Pencil, CalendarDays, Phone, User, Clock, Inbox, LogOut, Download } from 'lucide-react';
+import { Check, X, MessageCircle, Trash2, Pencil, CalendarDays, Phone, User, Clock, Inbox, LogOut, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { entities } from '@/api/api';
 import { TIME_SLOT_LABELS, slotsClash } from '@/lib/data';
 import { bookingsToCsv } from '@/lib/csv';
+import { replyLink } from '@/lib/whatsapp';
 import type { Booking, BookingRequest, RequestStatus } from '@/types';
 import { useDialog } from '@/components/useDialog';
 import AddBookingPage from './AddBookingPage';
@@ -160,6 +161,11 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
                     قُدِّم: {format(new Date(req.submitted_at), 'yyyy/MM/dd HH:mm')}
                   </p>
                 </div>
+                {replyLink(req) && (
+                  <Button asChild size="sm" variant="outline" className="gap-1.5 self-start font-body">
+                    <a href={replyLink(req)!} target="_blank" rel="noopener noreferrer"><MessageCircle size={14} />رد عبر واتساب</a>
+                  </Button>
+                )}
                 {req.status === 'pending' && (
                   <div className="flex gap-2 sm:flex-col">
                     <Button

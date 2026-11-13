@@ -52,5 +52,5 @@ export default function Captcha({ onToken }: { onToken: (token: string | null) =
     };
   }, [siteKey, onToken]);
 
-  return siteKey ? <div ref={box} className="-mx-3 flex justify-center sm:mx-0" /> : null;
+  return siteKey ? <div ref={box} data-testid="captcha" className="-mx-3 flex justify-center sm:mx-0" /> : null;
 }

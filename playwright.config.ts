@@ -19,8 +19,11 @@ export default defineConfig({
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: { baseURL: remote ?? `http://localhost:${PORT}`, trace: 'retain-on-failure', locale: 'ar' },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /pwa\.spec\.ts/ },
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /(pwa|visual)\.spec\.ts/ },
     { name: 'pwa', use: { ...devices['Desktop Chrome'], baseURL: remote ?? `http://localhost:${PWA_PORT}` }, testMatch: /pwa\.spec\.ts/ },
+    // Screenshots of every page at phone, tablet and desktop size, compared with committed baselines (e2e/visual.spec.ts-snapshots).
+    // The baselines are made on Linux in CI (see .github/workflows/visual-baselines.yml), so locally this project is only for a quick look.
+    { name: 'visual', use: { ...devices['Desktop Chrome'] }, testMatch: /visual\.spec\.ts/ },
     // A phone-sized browser for the checks that matter on small screens (most visitors are on phones).
     { name: 'mobile', use: { ...devices['Pixel 7'] }, testMatch: /(accessibility|smoke)\.spec\.ts/ },
     // Safari's engine. The behaviour specs run here; accessibility is engine independent, so it stays on chromium.

@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { format, parseISO, isAfter, startOfToday } from 'date-fns';
 import { LEVANTINE_MONTHS } from '@/lib/levantineMonths';
-import { Download, RefreshCw } from 'lucide-react';
+import { Download, RefreshCw, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TIME_SLOT_LABELS } from '@/lib/data';
 import html2canvas from 'html2canvas';
@@ -72,10 +72,9 @@ export default function DownloadEventsImage({ bookings, onRefresh }: DownloadEve
     setTimestamp(now);
   };
 
-  const handleDownload = async () => {
-    setLoading(true);
+  const renderCanvas = async () => {
     await document.fonts.ready;
-    const canvas = await html2canvas(ref.current!, {
+    return html2canvas(ref.current!, {
       scale: 4,
       useCORS: true,
       allowTaint: false,
@@ -97,11 +96,31 @@ export default function DownloadEventsImage({ bookings, onRefresh }: DownloadEve
         headers.forEach(h => { h.style.fontFamily = CANVAS_FONT; });
       },
     });
+  };
+
+  const handleDownload = async () => {
+    setLoading(true);
+    const canvas = await renderCanvas();
     const link = document.createElement('a');
     link.download = `افراح-ال-سلهب-${format(today, 'yyyy-MM-dd')}.jpg`;
     link.href = canvas.toDataURL('image/jpeg', 1.0);
     link.click();
     updateTimestamp();
+    setLoading(false);
+  };
+
+  // On a phone the share sheet sends the picture straight to WhatsApp; elsewhere the button is not shown.
+  const canShare = typeof navigator.canShare === 'function' && navigator.canShare({ files: [new File([], 'a.jpg', { type: 'image/jpeg' })] });
+  const handleShare = async () => {
+    setLoading(true);
+    try {
+      const canvas = await renderCanvas();
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 1));
+      if (blob) await navigator.share({ files: [new File([blob], `افراح-ال-سلهب-${format(today, 'yyyy-MM-dd')}.jpg`, { type: 'image/jpeg' })] });
+      updateTimestamp();
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') console.error('Share failed', err);   // closing the share sheet is not an error
+    }
     setLoading(false);
   };
 
@@ -133,6 +152,12 @@ export default function DownloadEventsImage({ bookings, onRefresh }: DownloadEve
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
             تحديث الصورة
           </Button>
+          {canShare && (
+            <Button variant="outline" onClick={handleShare} disabled={loading || upcoming.length === 0} className="gap-2 font-body">
+              <Share2 size={16} />
+              مشاركة
+            </Button>
+          )}
           <Button onClick={handleDownload} disabled={loading || upcoming.length === 0} className="gap-2 font-body">
             <Download size={16} />
             {loading ? 'جارٍ التحميل...' : '📥 تحميل الصورة'}

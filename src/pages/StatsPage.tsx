@@ -10,6 +10,10 @@ const SLOT_COLORS: Record<CanonicalSlot, string> = { lunch: '#f59e0b', afternoon
 const SLOT_LABELS: Record<CanonicalSlot, string> = { lunch: 'غداء ظهراً', afternoon: 'خطبة / طلبة عصراً', wedding: 'حفل زفاف مساءاً', full: 'اليوم كاملاً' };
 const DAY_NAMES = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
+// People who asked their device for less motion get charts that appear at once instead of growing in.
+const animateCharts = () =>
+  typeof window.matchMedia !== 'function' || !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 const monthKey = (date: string) => {
   const d = parseISO(date);
   return `${LEVANTINE_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
@@ -31,6 +35,7 @@ function ChartFrame({ summary, children }: { summary: string[]; children: ReactN
 
 export default function StatsPage({ bookings }: { bookings: Booking[] }) {
   const active = useMemo(() => bookings.filter(b => b.status !== 'cancelled'), [bookings]);
+  const animate = animateCharts();
   const today = startOfToday();
 
   const upcoming = active.filter(b => isAfter(parseISO(b.date), today)).length;
@@ -112,7 +117,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
                   formatter={(v) => [v, 'حجز']}
                   contentStyle={{ fontFamily: 'Cairo', fontSize: 12, direction: 'rtl' }}
                 />
-                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} isAnimationActive={animate} />
               </BarChart>
             </ResponsiveContainer>
             </ChartFrame>
@@ -137,6 +142,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
                     cy="50%"
                     outerRadius={75}
                     rootTabIndex={-1}
+                    isAnimationActive={animate}
                     label={false}
                     labelLine={false}
                   >
@@ -180,7 +186,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
                 <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'Cairo' }} />
                 <YAxis width={28} axisLine={false} tickLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
                 <Tooltip formatter={(v) => [v, 'حجز']} contentStyle={{ fontFamily: 'Cairo', fontSize: 12, direction: 'rtl' }} />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="count" radius={[4, 4, 0, 0]} isAnimationActive={animate}>
                   {dayData.map((_, i) => (
                     <Cell key={i} fill={i === 5 || i === 6 ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground) / 0.4)'} />
                   ))}

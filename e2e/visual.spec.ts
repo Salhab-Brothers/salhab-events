@@ -28,6 +28,7 @@ test.beforeAll(seedAdmin);
 
 test.beforeEach(async ({ page }) => {
   await page.clock.setFixedTime(NOW);
+  await page.emulateMedia({ reducedMotion: 'reduce' });   // charts draw at once, so the picture does not depend on timing
   await resetData();
   await service.from('bookings').insert(Array.from({ length: 14 }, (_, i) => {
     const d = new Date(2026, 10, 16 + i * 17);
@@ -77,7 +78,7 @@ for (const size of Object.keys(SIZES) as Size[]) {
       await page.setViewportSize(SIZES[size]);
       await page.goto(`/#/${id}`);
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-      await snap(page, id === 'admin' ? 'sign-in' : id, size, id === 'stats' ? 2000 : 1000);
+      await snap(page, id === 'admin' ? 'sign-in' : id, size);
     });
   }
 }

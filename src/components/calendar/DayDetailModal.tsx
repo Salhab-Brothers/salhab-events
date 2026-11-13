@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef } from 'react';
 import { formatFullDate } from '@/lib/levantineMonths';
-import { X, Clock, User } from 'lucide-react';
+import { X, Clock, User, Send } from 'lucide-react';
+import { format, isBefore, startOfDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { TIME_SLOT_LABELS } from '@/lib/data';
 import EventCardDownload from '@/components/EventCardDownload';
@@ -79,6 +80,11 @@ export default function DayDetailModal({ day, bookings, dayOfWeek, islamicEvents
                 <span className="text-2xl">✓</span>
               </div>
               <p className="font-body text-muted-foreground">هذا اليوم متاح للحجز</p>
+              {!isBefore(day, startOfDay(new Date())) && (
+                <Button asChild className="mt-4 gap-2 font-body">
+                  <a href={`#/request?date=${format(day, 'yyyy-MM-dd')}`}><Send size={14} />اطلب هذا اليوم</a>
+                </Button>
+              )}
             </div>
           ) : bookings.length === 0 && islamicEvents.length > 0 ? (
             <div className="text-center py-4">

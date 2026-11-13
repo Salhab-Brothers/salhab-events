@@ -67,6 +67,14 @@ describe('DayDetailModal', () => {
 
   beforeEach(() => base.onClose.mockClear());
 
+  it('offers to request a free day that is still ahead, but not one that has passed', () => {
+    const { unmount } = render(<DayDetailModal {...base} day={new Date(2099, 11, 4)} />);
+    expect(screen.getByRole('link', { name: 'اطلب هذا اليوم' })).toHaveAttribute('href', '#/request?date=2099-12-04');
+    unmount();
+    render(<DayDetailModal {...base} />);
+    expect(screen.queryByRole('link', { name: 'اطلب هذا اليوم' })).toBeNull();
+  });
+
   it('says the day is free and flags weekends', () => {
     render(<DayDetailModal {...base} />);
     expect(screen.getByText('هذا اليوم متاح للحجز')).toBeInTheDocument();

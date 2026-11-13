@@ -97,3 +97,16 @@ test('the Reviews menu entry appears only after a review is approved', async ({ 
   await page.reload();
   await expect(page.getByRole('button', { name: 'التقييمات' }).first()).toBeVisible();
 });
+
+test('the request form warns about a taken slot and points to a free one', async ({ page }) => {
+  const taken = futureDate(10);
+  await service.from('bookings').insert({
+    date: taken, event_name: 'عرس قائم', time_slot: 'lunch', person_name: 'س', phone: '0500000000', status: 'confirmed',
+  });
+  await page.goto('/#/request');
+  await page.locator('input[type="date"]').fill(taken);
+  const hint = page.getByRole('status');
+  await expect(hint).toContainText('محجوز');
+  await hint.getByRole('button', { name: 'عصراً' }).click();
+  await expect(page.getByRole('status')).toContainText('هذا الموعد متاح');
+});

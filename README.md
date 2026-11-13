@@ -88,7 +88,7 @@ One-time setup:
 2. R2, Manage API tokens: create a token with Object Read and Write, limited to that bucket only.
 3. Repository secrets: `SUPABASE_DB_URL` (Supabase, Connect, **Session pooler** connection string with your database password; the direct host is IPv6 only and GitHub runners cannot reach it), `BACKUP_PASSPHRASE` (keep a copy in a password manager; without it a backup cannot be opened), `R2_ENDPOINT` (`https://<account id>.r2.cloudflarestorage.com`), `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`.
 
-Run it once from the Actions tab to check it works. To restore: download the file from the bucket, `gpg -d db-....sql.gpg > backup.sql`, and run the SQL on an empty project (SQL Editor, or `psql`). Try a restore on a scratch project once, so you know it works before you need it.
+Run it once from the Actions tab to check it works. To restore: download the file from the bucket, `gpg -d db-....sql.gpg > backup.sql`, and run the SQL on an empty project (SQL Editor, or `psql`). `.github/workflows/restore-drill.yml` does this from the bucket once a month (newest file, decrypt, restore into a scratch database, compare row counts) and fails if the newest backup is more than 5 days old; run it from the Actions tab after changing any backup secret. Restoring into a real Supabase project is still worth trying once on a scratch project.
 
 ## Deploying the backend
 

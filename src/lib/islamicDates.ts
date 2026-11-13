@@ -1,5 +1,4 @@
-// Islamic dates for 2026 (approximate, based on astronomical calculations)
-// All dates are the EARLIEST possible (first probability day)
+// Islamic holidays, worked out from the Umm al-Qura calendar (approximate: the real day depends on the moon).
 
 export type IslamicEventType = 'ramadan_start' | 'eid_fitr' | 'arafah' | 'eid_adha';
 
@@ -19,71 +18,49 @@ export interface IslamicDay {
   isFirst: boolean;
 }
 
-export const ISLAMIC_EVENTS_2026: IslamicEvent[] = [
-  {
-    date: '2026-02-17', // Ramadan 1447 starts ~Feb 17 or 18
-    type: 'ramadan_start',
-    label: 'بداية شهر رمضان المبارك (تقريبي)',
-    emoji: '🌙',
-    days: 1, // just show one day
-  },
-  {
-    date: '2026-03-19', // Eid al-Fitr 1447: ~Mar 19 or 20
-    type: 'eid_fitr',
-    label: 'عيد الفطر المبارك',
-    emoji: '🌙',
-    days: 4, // 3 days + احتمال
-  },
-  {
-    date: '2026-05-26', // Arafah (9 Dhul Hijjah): ~May 26
-    type: 'arafah',
-    label: 'يوم عرفة',
-    emoji: '🕌',
-    days: 1,
-  },
-  {
-    date: '2026-05-27', // Eid al-Adha 1447: ~May 27 or 28
-    type: 'eid_adha',
-    label: 'عيد الأضحى المبارك',
-    emoji: '🐑',
-    days: 5, // 4 days + احتمال
-  },
-  // 2027 dates (approx)
-  {
-    date: '2027-02-06',
-    type: 'ramadan_start',
-    label: 'بداية شهر رمضان المبارك (تقريبي)',
-    emoji: '🌙',
-    days: 1,
-  },
-  {
-    date: '2027-03-08',
-    type: 'eid_fitr',
-    label: 'عيد الفطر المبارك',
-    emoji: '🌙',
-    days: 4,
-  },
-  {
-    date: '2027-05-15',
-    type: 'arafah',
-    label: 'يوم عرفة',
-    emoji: '🕌',
-    days: 1,
-  },
-  {
-    date: '2027-05-16',
-    type: 'eid_adha',
-    label: 'عيد الأضحى المبارك',
-    emoji: '🐑',
-    days: 5,
-  },
-];
+const LABELS: Record<IslamicEventType, Pick<IslamicEvent, 'label' | 'emoji' | 'days'>> = {
+  ramadan_start: { label: 'بداية شهر رمضان المبارك (تقريبي)', emoji: '🌙', days: 1 },
+  eid_fitr: { label: 'عيد الفطر المبارك', emoji: '🌙', days: 4 },   // 3 days, plus the one before in case the moon is sighted early
+  arafah: { label: 'يوم عرفة', emoji: '🕌', days: 1 },
+  eid_adha: { label: 'عيد الأضحى المبارك', emoji: '🐑', days: 5 },   // 4 days, plus one for the same reason
+};
+
+const hijri = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { month: 'numeric', day: 'numeric' });
+const pad = (n: number) => String(n).padStart(2, '0');
+const toStr = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+/**
+ * The holidays of the given years, worked out from the Umm al-Qura calendar the browser knows.
+ * Ramadan and Eid al-Fitr start a day earlier than the calendar says, because the real day depends
+ * on the moon being sighted; the day before is shown as a possibility.
+ */
+export function computeIslamicEvents(years: number[]): IslamicEvent[] {
+  const events: IslamicEvent[] = [];
+  for (const year of years) {
+    for (let day = new Date(year, 0, 1, 12); day.getFullYear() === year; day.setDate(day.getDate() + 1)) {
+      const parts = hijri.formatToParts(day);
+      const month = Number(parts.find(p => p.type === 'month')!.value);
+      const dom = Number(parts.find(p => p.type === 'day')!.value);
+      const add = (type: IslamicEventType, back = 0) =>
+        events.push({ type, ...LABELS[type], date: toStr(new Date(year, day.getMonth(), day.getDate() - back)) });
+      if (month === 9 && dom === 1) add('ramadan_start', 1);
+      else if (month === 10 && dom === 1) add('eid_fitr', 1);
+      else if (month === 12 && dom === 9) add('arafah');
+      else if (month === 12 && dom === 10) add('eid_adha');
+    }
+  }
+  return events;
+}
+
+/** From last year to four years ahead, so the calendar never runs out of holidays. */
+const thisYear = new Date().getFullYear();
+export const ISLAMIC_EVENTS: IslamicEvent[] = computeIslamicEvents(Array.from({ length: 6 }, (_, i) => thisYear - 1 + i));
 
 // Build a map: dateStr -> event info (including all days of the event)
 export function buildIslamicDateMap() {
   const map: Record<string, IslamicDay[]> = {};
 
-  ISLAMIC_EVENTS_2026.forEach(event => {
+  ISLAMIC_EVENTS.forEach(event => {
     const [year, month, day] = event.date.split('-').map(Number);
 
     for (let i = 0; i < event.days; i++) {

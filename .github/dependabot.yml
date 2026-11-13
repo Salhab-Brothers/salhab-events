@@ -23,6 +23,10 @@ updates:
       # Do it as its own PR with before and after screenshots.
       - dependency-name: 'tailwindcss'
         update-types: ['version-update:semver-major']
+      # TypeScript 6 is pinned on purpose (typescript-eslint supports up to 6.0.x). Move to 7.1 by hand
+      # once it is released and typescript-eslint supports it.
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:

@@ -16,6 +16,9 @@ updates:
       # Blocked: eslint-plugin-react does not support ESLint 10 yet. Revisit when it does.
       - dependency-name: 'eslint'
         update-types: ['version-update:semver-major']
+      # @eslint/js 10 requires ESLint 10, so it moves together with the line above.
+      - dependency-name: '@eslint/js'
+        update-types: ['version-update:semver-major']
       # Tailwind 4 is a real migration (config format, renamed classes, a different animation plugin).
       # Do it as its own PR with before and after screenshots.
       - dependency-name: 'tailwindcss'

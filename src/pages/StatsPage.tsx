@@ -101,9 +101,9 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
           ) : (
             <ChartFrame summary={monthlyData.map(d => `${d.month}: ${d.count}`)}>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={monthlyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+              <BarChart data={monthlyData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                 <XAxis dataKey="month" tick={{ fontSize: 10, fontFamily: 'Cairo' }} />
-                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                <YAxis width={28} axisLine={false} tickLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
                 <Tooltip
                   formatter={(v) => [v, 'حجز']}
                   contentStyle={{ fontFamily: 'Cairo', fontSize: 12, direction: 'rtl' }}
@@ -171,9 +171,9 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
           ) : (
             <ChartFrame summary={dayData.map(d => `${d.name}: ${d.count}`)}>
             <ResponsiveContainer width="100%" height={160}>
-              <BarChart data={dayData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+              <BarChart data={dayData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                 <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'Cairo' }} />
-                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                <YAxis width={28} axisLine={false} tickLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
                 <Tooltip formatter={(v) => [v, 'حجز']} contentStyle={{ fontFamily: 'Cairo', fontSize: 12, direction: 'rtl' }} />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                   {dayData.map((_, i) => (

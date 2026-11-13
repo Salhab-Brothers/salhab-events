@@ -15,11 +15,11 @@ export default {
         sm: 'calc(var(--radius) - 4px)'
       },
       fontFamily: {
-        heading: ['var(--font-heading)', 'Cairo', 'sans-serif'],
-        body: ['var(--font-body)', 'Noto Sans Arabic', 'sans-serif'],
-        cairo: ['Cairo', 'sans-serif'],
+        heading: ['var(--font-heading)', 'Cairo Variable', 'sans-serif'],
+        body: ['var(--font-body)', 'Cairo Variable', 'sans-serif'],
+        cairo: ['Cairo Variable', 'sans-serif'],
         tajawal: ['Tajawal', 'sans-serif'],
-        noto: ['Noto Sans Arabic', 'sans-serif'],
+        noto: ['Cairo Variable', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',

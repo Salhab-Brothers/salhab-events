@@ -4,7 +4,7 @@ import { formatFullDateStr } from '@/lib/levantineMonths';
 import { Check, X, Trash2, Pencil, CalendarDays, Phone, User, Clock, Inbox, LogOut, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { entities } from '@/api/api';
-import { TIME_SLOT_LABELS } from '@/lib/data';
+import { TIME_SLOT_LABELS, slotsClash } from '@/lib/data';
 import { bookingsToCsv } from '@/lib/csv';
 import type { Booking, BookingRequest, RequestStatus } from '@/types';
 import { useDialog } from '@/components/useDialog';
@@ -62,7 +62,13 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
     onRefresh();
   };
 
-  const approveRequest = (req: BookingRequest) => run(req.id, async () => {
+  const approveRequest = async (req: BookingRequest) => {
+    const clash = bookings.find(b => b.status !== 'cancelled' && b.date === req.date && slotsClash(b.time_slot, req.time_slot));
+    if (clash && !(await confirm(`يوجد حجز في نفس الوقت: "${clash.event_name}" (${TIME_SLOT_LABELS[clash.time_slot]}). هل تريد القبول رغم ذلك؟`))) return;
+    await createFromRequest(req);
+  };
+
+  const createFromRequest = (req: BookingRequest) => run(req.id, async () => {
     await entities.Booking.create({
       date: req.date,
       event_name: req.event_name,

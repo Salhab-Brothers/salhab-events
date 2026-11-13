@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  TIME_SLOT_LABELS, STATUS_LABELS, REQUEST_STATUS_LABELS, normalizeSlot, BOOKABLE_SLOTS,
+  TIME_SLOT_LABELS, STATUS_LABELS, REQUEST_STATUS_LABELS, normalizeSlot, BOOKABLE_SLOTS, slotsClash,
 } from './data';
 import type { TimeSlot } from '@/types';
 
@@ -35,5 +35,18 @@ describe('BOOKABLE_SLOTS', () => {
   it('offers the four current slots with their labels', () => {
     expect(BOOKABLE_SLOTS.map((s) => s.value)).toEqual(['lunch', 'afternoon', 'wedding', 'full']);
     BOOKABLE_SLOTS.forEach((s) => expect(s.label).toBe(TIME_SLOT_LABELS[s.value]));
+  });
+});
+
+describe('slotsClash', () => {
+  it('clashes on the same slot, legacy names included, or when either takes the whole day', () => {
+    expect(slotsClash('lunch', 'lunch')).toBe(true);
+    expect(slotsClash('morning', 'lunch')).toBe(true);
+    expect(slotsClash('full', 'wedding')).toBe(true);
+    expect(slotsClash('afternoon', 'full')).toBe(true);
+  });
+  it('does not clash for different slots', () => {
+    expect(slotsClash('lunch', 'wedding')).toBe(false);
+    expect(slotsClash('afternoon', 'evening')).toBe(false);
   });
 });

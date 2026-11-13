@@ -75,6 +75,26 @@ describe('AdminPage requests', () => {
     expect(BookingRequest.update).toHaveBeenCalledWith('r1', { status: 'approved' });
   });
 
+  it('warns before approving a request that clashes with a booking, and approves only if confirmed', async () => {
+    const clash = makeBooking({ date: '2026-06-20', time_slot: 'full', event_name: 'عرس قائم' });
+    const p = { ...props(), bookings: [clash], requests: [makeRequest({ date: '2026-06-20', time_slot: 'lunch' })] };
+    render(<AdminPage {...p} />);
+    await userEvent.click(screen.getByText('قبول'));
+    expect(await screen.findByRole('dialog')).toHaveTextContent('عرس قائم');
+    await userEvent.click(screen.getByRole('button', { name: 'إلغاء' }));
+    expect(Booking.create).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByText('قبول'));
+    await userEvent.click(await screen.findByRole('button', { name: 'تأكيد' }));
+    await waitFor(() => expect(Booking.create).toHaveBeenCalled());
+  });
+
+  it('does not warn for a cancelled booking or another day', async () => {
+    const p = { ...props(), bookings: [makeBooking({ date: '2026-06-20', time_slot: 'full', status: 'cancelled' }), makeBooking({ id: 'x', date: '2026-06-21', time_slot: 'full' })], requests: [makeRequest({ date: '2026-06-20', time_slot: 'lunch' })] };
+    render(<AdminPage {...p} />);
+    await userEvent.click(screen.getByText('قبول'));
+    await waitFor(() => expect(Booking.create).toHaveBeenCalled());
+  });
+
   it('rejects a request', async () => {
     const p = { ...props(), requests: [makeRequest()] };
     render(<AdminPage {...p} />);

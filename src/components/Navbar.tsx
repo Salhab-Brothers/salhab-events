@@ -38,23 +38,20 @@ export default function Navbar({ activePage, setActivePage, theme, toggleTheme }
             className="flex items-center gap-3 text-primary hover:opacity-80 transition-opacity"
           >
             <Logo size={36} />
-            <div className="text-right hidden sm:block">
-              <p className="font-heading font-bold text-base leading-tight text-primary">مناسبات</p>
-              <p className="font-heading font-bold text-base leading-tight text-foreground">آل سلهب</p>
-            </div>
-            <div className="text-right sm:hidden">
-              <p className="font-heading font-bold text-sm leading-tight text-primary">آل سلهب</p>
+            <div className="text-right">
+              <p className="font-heading font-bold text-sm sm:text-base leading-tight text-primary">مناسبات</p>
+              <p className="font-heading font-bold text-sm sm:text-base leading-tight text-foreground">آل سلهب</p>
             </div>
           </button>
 
           {/* Desktop Nav */}
-          <nav aria-label="التنقل الرئيسي" className="hidden md:flex items-center gap-1">
+          <nav aria-label="التنقل الرئيسي" className="hidden lg:flex items-center gap-1">
             {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 aria-current={activePage === id ? 'page' : undefined}
                 onClick={() => handleNav(id)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-body font-medium transition-all duration-200
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-body font-medium whitespace-nowrap transition-all duration-200
                   ${activePage === id
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
@@ -81,7 +78,7 @@ export default function Navbar({ activePage, setActivePage, theme, toggleTheme }
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden rounded-full"
+              className="lg:hidden rounded-full"
               onClick={() => setMenuOpen(v => !v)}
               aria-label="القائمة"
               aria-expanded={menuOpen}
@@ -95,7 +92,7 @@ export default function Navbar({ activePage, setActivePage, theme, toggleTheme }
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <nav id="mobile-menu" aria-label="قائمة الجوال" className="md:hidden border-t border-border/60 bg-card animate-fade-in">
+        <nav id="mobile-menu" aria-label="قائمة الجوال" className="lg:hidden border-t border-border/60 bg-card animate-fade-in">
           <div className="px-4 py-3 space-y-1">
             {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
               <button

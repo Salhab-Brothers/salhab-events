@@ -75,6 +75,8 @@ Local tests use Cloudflare's public always-pass captcha keys. CI runs the same s
 
 The suite also checks accessibility with axe (WCAG A and AA, serious and critical problems fail the build) on every public page and every admin tab, in a desktop and a phone-sized browser (the `mobile` project in `playwright.config.ts`). Pages have their own addresses (`#/events`, `#/reviews`, ...), so back, forward, reload and shared links work.
 
+`e2e/responsive.spec.ts` checks the layout at 320, 360, 390, 768, 1024 and 1440 px on every page and admin tab, with long names and many months in the data: nothing scrolls sideways, every control is at least 24 px (the WCAG 2.5.8 floor), form fields are at least 40 px tall on a phone, and the request and review forms are centred on a wide screen. The site is mobile first: the shared controls are 44 px tall below 768 px and compact from there up.
+
 ## Backups
 
 Free Supabase projects have no automatic backups, so `.github/workflows/backup.yml` exports the database (the `public` schema: bookings, requests, reviews, admins list) twice a week, encrypts it with GPG, and uploads it to a **private** Cloudflare R2 bucket (nothing is stored in this public repo). Admin logins are not in it: re-create them with the steps under "Admin accounts".

@@ -27,7 +27,7 @@ export default function AdminAuth() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-[65dvh] flex items-center justify-center py-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
@@ -69,7 +69,7 @@ export default function AdminAuth() {
                   onClick={() => setShowPw(v => !v)}
                   aria-label={showPw ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
                   aria-pressed={showPw}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 rounded text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="absolute left-0 top-0 flex h-full w-11 items-center justify-center rounded-md text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   {showPw ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}
                 </button>
@@ -80,7 +80,7 @@ export default function AdminAuth() {
                   placeholder="••••••••"
                   value={password}
                   onChange={e => { setPassword(e.target.value); setError(''); }}
-                  className="font-body pl-9"
+                  className="font-body pl-11"
                   dir="ltr"
                   required
                 />

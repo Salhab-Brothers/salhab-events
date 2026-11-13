@@ -40,16 +40,16 @@ export default function SummaryBar({ bookings }: { bookings: Booking[] }) {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-      {stats.map(({ icon: Icon, label, value, color, bg }) => (
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-5 sm:mb-6">
+      {stats.map(({ icon: Icon, label, value, color, bg }, i) => (
         <div
           key={label}
-          className={`flex items-center gap-4 px-5 py-4 rounded-xl border border-border/50 ${bg} transition-all`}
+          className={`flex items-center gap-3 sm:gap-4 px-3 py-3 sm:px-5 sm:py-4 rounded-xl border border-border/50 ${bg} transition-all ${i === 2 ? 'col-span-2 lg:col-span-1' : ''}`}
         >
-          <div className={`p-2.5 rounded-lg bg-white/60 dark:bg-black/20 ${color}`}>
+          <div className={`p-2 sm:p-2.5 rounded-lg bg-white/60 dark:bg-black/20 shrink-0 ${color}`}>
             <Icon size={20} />
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-xs text-muted-foreground font-body">{label}</p>
             <p className={`text-sm font-heading font-semibold mt-0.5 ${color} leading-tight`}>{value}</p>
           </div>

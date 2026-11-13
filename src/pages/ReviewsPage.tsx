@@ -27,7 +27,7 @@ function StarDisplay({ value }: { value: number }) {
 /** Clickable stars for choosing a rating. */
 function StarInput({ value, onChange }: { value: number; onChange: (rating: number) => void }) {
   return (
-    <div className="flex gap-1" role="group" aria-labelledby="review-rating-heading">
+    <div className="flex" role="group" aria-labelledby="review-rating-heading">
       {[1, 2, 3, 4, 5].map(s => (
         <button
           key={s}
@@ -35,7 +35,7 @@ function StarInput({ value, onChange }: { value: number; onChange: (rating: numb
           aria-label={`${s} من 5`}
           aria-pressed={s === value}
           onClick={() => onChange(s)}
-          className="rounded transition-all hover:scale-110 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="rounded p-1.5 transition-all hover:scale-110 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Star size={28} className={starClass(s <= value)} />
         </button>
@@ -92,7 +92,7 @@ export default function ReviewsPage() {
   };
 
   return (
-    <div className="animate-fade-in max-w-3xl">
+    <div className="animate-fade-in mx-auto max-w-3xl">
       <div className="mb-6">
         <h1 className="font-heading font-bold text-2xl sm:text-3xl text-foreground mb-1">التقييمات والمراجعات</h1>
         <p className="font-body text-muted-foreground text-sm">شاركنا رأيك في تجربتك مع نظام حجوزات آل سلهب</p>
@@ -100,7 +100,7 @@ export default function ReviewsPage() {
 
       {/* Summary */}
       {reviews.length > 0 && (
-        <div className="bg-card border border-border/50 rounded-2xl p-5 mb-6 flex items-center gap-6 shadow-sm">
+        <div className="bg-card border border-border/50 rounded-2xl p-4 sm:p-5 mb-6 flex items-center gap-4 sm:gap-6 shadow-sm">
           <div className="text-center">
             <p className="font-heading font-bold text-4xl text-amber-700">{avgRating.toFixed(1)}</p>
             <StarDisplay value={Math.round(avgRating)} />
@@ -126,7 +126,7 @@ export default function ReviewsPage() {
       )}
 
       {/* Form */}
-      <div className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm mb-6">
+      <div className="bg-card border border-border/50 rounded-2xl p-4 sm:p-6 shadow-sm mb-6">
         <h2 className="font-heading font-bold text-base text-foreground mb-4 flex items-center gap-2">
           <MessageSquare size={18} className="text-primary" />
           أضف تقييمك
@@ -184,7 +184,7 @@ export default function ReviewsPage() {
           {createMutation.isError && (
             <p className="text-sm font-body text-destructive">تعذّر إرسال التقييم. حاول مرة أخرى.</p>
           )}
-          <Button type="submit" disabled={!form.rating || createMutation.isPending || (!!captchaSiteKey() && !token)} className="font-body gap-2">
+          <Button type="submit" disabled={!form.rating || createMutation.isPending || (!!captchaSiteKey() && !token)} className="w-full font-body gap-2 sm:w-auto">
             <Send size={15} />
             {createMutation.isPending ? 'جارٍ الإرسال...' : 'إرسال التقييم'}
           </Button>

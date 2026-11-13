@@ -15,7 +15,11 @@ const monthKey = (date: string) => {
   return `${LEVANTINE_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 };
 
-/** Charts are visual only, so screen readers skip them and read `summary` as a list instead. */
+/**
+ * Charts are visual only, so screen readers skip them and read `summary` as a list instead.
+ * Each chart also sets `accessibilityLayer={false}`: recharts 3 otherwise adds a keyboard stop
+ * (svg tabindex=0), and the pie adds another (rootTabIndex), inside this hidden wrapper.
+ */
 function ChartFrame({ summary, children }: { summary: string[]; children: ReactNode }) {
   return (
     <>
@@ -101,7 +105,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
           ) : (
             <ChartFrame summary={monthlyData.map(d => `${d.month}: ${d.count}`)}>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={monthlyData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+              <BarChart accessibilityLayer={false} data={monthlyData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                 <XAxis dataKey="month" tick={{ fontSize: 10, fontFamily: 'Cairo' }} />
                 <YAxis width={28} axisLine={false} tickLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
                 <Tooltip
@@ -124,7 +128,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
             <>
               <ChartFrame summary={[]}>
               <ResponsiveContainer width="100%" height={180}>
-                <PieChart>
+                <PieChart accessibilityLayer={false}>
                   <Pie
                     data={slotData}
                     dataKey="value"
@@ -132,6 +136,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
                     cx="50%"
                     cy="50%"
                     outerRadius={75}
+                    rootTabIndex={-1}
                     label={false}
                     labelLine={false}
                   >
@@ -171,7 +176,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
           ) : (
             <ChartFrame summary={dayData.map(d => `${d.name}: ${d.count}`)}>
             <ResponsiveContainer width="100%" height={160}>
-              <BarChart data={dayData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+              <BarChart accessibilityLayer={false} data={dayData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                 <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'Cairo' }} />
                 <YAxis width={28} axisLine={false} tickLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
                 <Tooltip formatter={(v) => [v, 'حجز']} contentStyle={{ fontFamily: 'Cairo', fontSize: 12, direction: 'rtl' }} />

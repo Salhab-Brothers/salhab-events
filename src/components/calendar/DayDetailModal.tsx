@@ -25,15 +25,15 @@ export default function DayDetailModal({ day, bookings, dayOfWeek, islamicEvents
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md animate-fade-in"
+        className="flex max-h-[90dvh] w-full flex-col rounded-t-2xl border border-border bg-card shadow-2xl animate-fade-in sm:max-w-md sm:rounded-2xl"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-3 sm:px-6 sm:py-4">
           <div>
             <p className={`font-heading font-bold text-lg ${isFriSat ? 'text-primary' : 'text-foreground'}`}>
               {formatFullDate(day)}
@@ -48,7 +48,7 @@ export default function DayDetailModal({ day, bookings, dayOfWeek, islamicEvents
         </div>
 
         {/* Content */}
-        <div className="px-6 py-4 space-y-3 max-h-[60vh] overflow-y-auto">
+        <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4 sm:px-6">
 
           {/* Islamic Events */}
           {islamicEvents.map((ev, i) => (
@@ -95,7 +95,7 @@ export default function DayDetailModal({ day, bookings, dayOfWeek, islamicEvents
           )}
         </div>
 
-        <div className="px-6 py-3 border-t border-border">
+        <div className="shrink-0 border-t border-border px-5 py-3 sm:px-6">
           <Button onClick={onClose} className="w-full font-body" variant="outline">إغلاق</Button>
         </div>
       </div>

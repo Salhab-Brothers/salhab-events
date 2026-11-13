@@ -85,7 +85,7 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
 
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in mx-auto max-w-5xl">
       <div className="mb-6 flex items-start justify-between gap-3">
         <div>
           <h1 className="font-heading font-bold text-2xl sm:text-3xl text-foreground mb-1">لوحة الإدارة</h1>
@@ -98,13 +98,13 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-muted p-1 rounded-xl mb-6 w-fit flex-wrap">
-        {TABS.map(t => (
+      <div className="mb-6 grid grid-cols-6 gap-1 rounded-xl bg-muted p-1 sm:flex sm:w-fit">
+        {TABS.map((t, i) => (
           <button
             key={t.id}
             aria-pressed={tab === t.id}
             onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-body font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+            className={`flex min-h-11 items-center justify-center gap-2 rounded-lg px-2 py-2 text-sm font-body font-medium whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${i < 3 ? 'col-span-2' : 'col-span-3'} sm:min-h-0 sm:px-4
               ${tab === t.id ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
           >
             {t.label}
@@ -119,9 +119,9 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
 
       {/* Requests Tab */}
       {tab === 'requests' && (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {requests.length === 0 && (
-            <div className="text-center py-20">
+            <div className="text-center py-20 lg:col-span-2">
               <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                 <Inbox size={32} className="text-muted-foreground" />
               </div>
@@ -137,7 +137,7 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
               className="bg-card border border-border/50 rounded-xl p-4 sm:p-5 shadow-sm"
             >
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                <div className="flex-1 space-y-2">
+                <div className="min-w-0 flex-1 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-heading font-bold text-base text-foreground">{req.event_name}</h3>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-body ${REQ_STATUS[req.status].cls}`}>
@@ -202,9 +202,9 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
 
       {/* Bookings Tab */}
       {tab === 'bookings' && (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {bookings.length > 0 && (
-            <div className="flex justify-end mb-2">
+            <div className="flex justify-end lg:col-span-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -223,7 +223,7 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
             </div>
           )}
           {bookings.length === 0 && (
-            <div className="text-center py-20">
+            <div className="text-center py-20 lg:col-span-2">
               <p className="font-body text-muted-foreground">لا توجد حجوزات</p>
             </div>
           )}
@@ -231,8 +231,8 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
             .sort((a, b) => a.date.localeCompare(b.date))
             .map(booking => (
             <div key={booking.id} className="bg-card border border-border/50 rounded-xl p-4 sm:p-5 shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
                     <h3 className="font-heading font-bold text-base text-foreground">{booking.event_name}</h3>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-body border border-primary/20">
@@ -250,12 +250,12 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
                     <span dir="ltr">{booking.phone}</span>
                   </div>
                 </div>
-                <div className="flex gap-1 items-center">
+                <div className="flex items-center justify-end gap-1 border-t border-border/50 pt-2 sm:border-0 sm:pt-0">
                   <EventCardDownload booking={booking} size="sm" />
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                    className="h-10 w-10 text-muted-foreground hover:text-primary md:h-8 md:w-8"
                     onClick={() => { onEditBooking(booking); setTab('add-booking'); }}
                     title="تعديل"
                     aria-label={`تعديل ${booking.event_name}`}
@@ -265,7 +265,7 @@ export default function AdminPage({ bookings, requests, onRefresh, onEditBooking
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    className="h-10 w-10 text-muted-foreground hover:text-destructive md:h-8 md:w-8"
                     onClick={() => deleteBooking(booking)}
                     title="حذف"
                     aria-label={`حذف ${booking.event_name}`}

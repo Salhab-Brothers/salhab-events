@@ -28,7 +28,7 @@ updates:
       - dependency-name: 'typescript'
         update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
-    directory: /
+    directories: ['/', '/.github/actions/e2e-setup']
     schedule:
       interval: weekly
     groups:

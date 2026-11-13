@@ -40,26 +40,25 @@ const { error: createError } = await service.auth.admin.createUser({ email: DRIL
 if (createError) throw createError;
 psql(`insert into public.admins (user_id) select id from auth.users where email = '${DRILL_EMAIL}' on conflict do nothing;`);
 
-// 2. Everything is back.
+// 2. The re-created admin can sign in. From here on the admin's own login is used, as the site does:
+// the service role only has rights on the tables the submit function writes to.
+const admin = createClient(url, publishable, { auth: { persistSession: false } });
+const signIn = await admin.auth.signInWithPassword({ email: DRILL_EMAIL, password: DRILL_PASSWORD });
+check(!signIn.error, 'the re-created admin can sign in');
+
+// 3. Everything is back: the admin sees every row the backup held.
 for (const [table, n] of Object.entries(expected)) {
-  const { count, error } = await service.from(table).select('*', { count: 'exact', head: true });
-  check(!error && count === n, `${table}: ${count} rows restored, backup holds ${n}${error ? ` (${error.message})` : ''}`);
+  const { count, error } = await admin.from(table).select('*', { count: 'exact', head: true });
+  check(!error && count === n, `${table}: the admin sees ${count} rows, backup holds ${n}${error ? ` (${error.message})` : ''}`);
 }
 
-// 3. The privacy rules came back with the data.
+// 4. The privacy rules came back with the data.
 const anon = createClient(url, publishable, { auth: { persistSession: false } });
 const publicRead = await anon.from('bookings').select('id,event_name,date');
 check(!publicRead.error && publicRead.data.length === expected.bookings, 'visitors can read the public booking columns');
 check((await anon.from('bookings').select('phone')).error !== null, 'visitors cannot read phone numbers');
 check(((await anon.from('booking_requests').select('id')).data ?? []).length === 0, 'visitors cannot read booking requests');
 check((await anon.from('reviews').insert({ reviewer_name: 'x', rating: 5 })).error !== null, 'visitors cannot write straight to the database');
-
-// 4. The re-created admin can sign in and sees what only an admin may see.
-const admin = createClient(url, publishable, { auth: { persistSession: false } });
-const signIn = await admin.auth.signInWithPassword({ email: DRILL_EMAIL, password: DRILL_PASSWORD });
-check(!signIn.error, 'the re-created admin can sign in');
-const { count: adminSees } = await admin.from('booking_requests').select('*', { count: 'exact', head: true });
-check(adminSees === expected.booking_requests, `the admin sees all ${expected.booking_requests} booking requests`);
 
 writeFileSync('.restore-expected.json', JSON.stringify(expected));   // read by e2e/restore.spec.ts
 process.stdout.write((problems.length ? `\n${problems.length} problem(s)` : '\nrestore drill passed') + '\n');

@@ -87,15 +87,15 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-1 gap-3 mb-8 min-[22rem]:grid-cols-2 sm:grid-cols-4">
         {statCards.map(({ icon: Icon, label, value, color, bg }) => (
-          <div key={label} className={`flex items-center gap-3 p-4 rounded-xl border border-border/50 ${bg} shadow-sm`}>
+          <div key={label} className={`flex min-w-0 items-center gap-3 p-4 rounded-xl border border-border/50 ${bg} shadow-sm`}>
             <div className={`p-2 rounded-lg bg-white/60 dark:bg-black/20 ${color}`}>
               <Icon size={18} />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-body text-muted-foreground leading-tight">{label}</p>
-              <p className={`font-heading font-bold text-lg leading-tight ${color}`}>{value}</p>
+              <p className={`font-heading font-bold text-lg leading-tight break-words ${color}`}>{value}</p>
             </div>
           </div>
         ))}

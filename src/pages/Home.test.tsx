@@ -89,6 +89,18 @@ describe('Home: loading', () => {
   });
 });
 
+describe('Home: keyboard', () => {
+  it('has a skip link that moves focus to the content without changing the page address', async () => {
+    Booking.list.mockResolvedValue([]);
+    render(<Home />);
+    await screen.findByText('calendar:0');
+    const hashBefore = window.location.hash;
+    await userEvent.click(screen.getByRole('link', { name: 'انتقل إلى المحتوى' }));
+    expect(screen.getByRole('main')).toHaveFocus();
+    expect(window.location.hash).toBe(hashBefore);
+  });
+});
+
 describe('Home: navigation', () => {
   it('visits every public page', async () => {
     render(<Home />);

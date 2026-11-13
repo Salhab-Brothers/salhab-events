@@ -1,3 +1,4 @@
+import { useEffect, useId, useRef } from 'react';
 import { formatFullDate } from '@/lib/levantineMonths';
 import { X, Clock, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,27 +23,37 @@ export interface SelectedDay {
 
 export default function DayDetailModal({ day, bookings, dayOfWeek, islamicEvents, onClose }: SelectedDay & { onClose: () => void }) {
   const isFriSat = dayOfWeek === 5 || dayOfWeek === 6;
+  const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+
+  // A native modal dialog: focus moves in and stays in, Escape closes it, the page behind is inert.
+  // When it goes away, focus returns to the day that opened it.
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    ref.current?.showModal();
+    return () => opener?.focus?.();
+  }, []);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center sm:p-4"
-      onClick={onClose}
+    <dialog
+      ref={ref}
+      aria-labelledby={titleId}
+      onCancel={e => { e.preventDefault(); onClose(); }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}   // only the dimmed backdrop, not the card
+      className="m-0 mt-auto max-h-none w-full max-w-none bg-transparent p-0 backdrop:bg-black/40 backdrop:backdrop-blur-sm sm:m-auto sm:max-w-md"
     >
-      <div
-        className="flex max-h-[90dvh] w-full flex-col rounded-t-2xl border border-border bg-card shadow-2xl animate-fade-in sm:max-w-md sm:rounded-2xl"
-        onClick={e => e.stopPropagation()}
-      >
+      <div className="flex max-h-[90dvh] w-full flex-col rounded-t-2xl border border-border bg-card text-foreground shadow-2xl animate-fade-in sm:rounded-2xl">
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-3 sm:px-6 sm:py-4">
           <div>
-            <p className={`font-heading font-bold text-lg ${isFriSat ? 'text-primary' : 'text-foreground'}`}>
+            <p id={titleId} className={`font-heading font-bold text-lg ${isFriSat ? 'text-primary' : 'text-foreground'}`}>
               {formatFullDate(day)}
             </p>
             {isFriSat && (
               <span className="text-xs text-primary/70 font-body">يوم مفضل للمناسبات</span>
             )}
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="إغلاق" className="rounded-full">
             <X size={18} />
           </Button>
         </div>
@@ -99,6 +110,6 @@ export default function DayDetailModal({ day, bookings, dayOfWeek, islamicEvents
           <Button onClick={onClose} className="w-full font-body" variant="outline">إغلاق</Button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

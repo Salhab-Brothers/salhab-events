@@ -31,7 +31,7 @@ export default function Navbar({ activePage, setActivePage, theme, toggleTheme }
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-card/90 backdrop-blur-md shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex min-h-16 flex-wrap items-center justify-between gap-x-3 gap-y-1 py-1">
           {/* Logo & Title */}
           <button
             onClick={() => handleNav('calendar')}

@@ -77,6 +77,8 @@ The suite also checks accessibility with axe (WCAG A and AA, serious and critica
 
 `e2e/responsive.spec.ts` checks the layout at 320, 360, 390, 768, 1024 and 1440 px on every page and admin tab, with long names and many months in the data: nothing scrolls sideways, every control is at least 24 px (the WCAG 2.5.8 floor), form fields are at least 40 px tall on a phone, and the request and review forms are centred on a wide screen. The site is mobile first: the shared controls are 44 px tall below 768 px and compact from there up.
 
+Breakpoints are in rem, so a reader who raises the browser's text size gets the compact layout earlier instead of a wide one that no longer fits. `e2e/text-size.spec.ts` checks that in Firefox with a real larger default text size, `e2e/keyboard.spec.ts` checks the skip link and the day dialog (Escape, focus kept inside, focus returned), and `e2e/visual.spec.ts` compares screenshots of every page with committed baselines (see `.github/workflows/visual-baselines.yml` for changing them on purpose). The dark mode choice is remembered in the browser; without one the site follows the device setting.
+
 ## Backups
 
 Free Supabase projects have no automatic backups, so `.github/workflows/backup.yml` exports the database (the `public` schema: bookings, requests, reviews, admins list) twice a week, encrypts it with GPG, and uploads it to a **private** Cloudflare R2 bucket (nothing is stored in this public repo). Admin logins are not in it: re-create them with the steps under "Admin accounts".

@@ -24,7 +24,9 @@ Element.prototype.hasPointerCapture = () => false;
 Element.prototype.setPointerCapture = vi.fn();
 Element.prototype.releasePointerCapture = vi.fn();
 Element.prototype.scrollIntoView = vi.fn();
+// Same shape as the real one (it takes a callback), so code that creates an observer type-checks like it does in a browser.
 globalThis.ResizeObserver = class {
+  constructor(readonly callback: ResizeObserverCallback) {}
   observe() {}
   unobserve() {}
   disconnect() {}

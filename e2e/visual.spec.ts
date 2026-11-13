@@ -26,11 +26,17 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
 test.beforeAll(seedAdmin);
 
+/** Seeding must not fail quietly: a screenshot of an empty page would still "match" an empty baseline. */
+async function seed(table: string, rows: object[]) {
+  const { error } = await service.from(table).insert(rows);
+  if (error) throw new Error(`seeding ${table} failed: ${error.message}`);
+}
+
 test.beforeEach(async ({ page }) => {
   await page.clock.setFixedTime(NOW);
   await page.emulateMedia({ reducedMotion: 'reduce' });   // charts draw at once, so the picture does not depend on timing
   await resetData();
-  await service.from('bookings').insert(Array.from({ length: 14 }, (_, i) => {
+  await seed('bookings', Array.from({ length: 14 }, (_, i) => {
     const d = new Date(2026, 10, 16 + i * 17);
     return {
       date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
@@ -43,15 +49,16 @@ test.beforeEach(async ({ page }) => {
       created_date: '2026-10-01T10:00:00Z',
     };
   }));
-  await service.from('booking_requests').insert([0, 1, 2].map(i => ({
+  await seed('booking_requests', [0, 1, 2].map(i => ({
     first_name: 'محمد', second_name: 'أحمد', third_name: 'عبدالله', last_name: 'سلهب', phone: '0507776655',
     date: `2026-12-${pad(5 + i)}`, time_slot: SLOTS[i], event_name: `حفل زفاف ${NAMES[i]}`, status: i === 2 ? 'approved' : 'pending',
     submitted_at: `2026-11-0${i + 1}T10:00:00Z`, created_date: `2026-11-0${i + 1}T10:00:00Z`,
   })));
-  await service.from('reviews').insert([
-    { reviewer_name: NAMES[0], rating: 5, comment: 'تجربة رائعة جداً وتنظيم ممتاز', approved: true, created_date: '2026-11-02T10:00:00Z' },
-    { reviewer_name: NAMES[1], event_name: 'زفاف', rating: 4, approved: true, created_date: '2026-11-03T10:00:00Z' },
-    { reviewer_name: NAMES[2], rating: 5, comment: 'ينتظر المراجعة', approved: false, created_date: '2026-11-04T10:00:00Z' },
+  // Every row has the same fields: a bulk insert fills missing ones with null, which the table refuses.
+  await seed('reviews', [
+    { reviewer_name: NAMES[0], event_name: '', rating: 5, comment: 'تجربة رائعة جداً وتنظيم ممتاز', approved: true, created_date: '2026-11-02T10:00:00Z' },
+    { reviewer_name: NAMES[1], event_name: 'زفاف', rating: 4, comment: '', approved: true, created_date: '2026-11-03T10:00:00Z' },
+    { reviewer_name: NAMES[2], event_name: '', rating: 5, comment: 'ينتظر المراجعة', approved: false, created_date: '2026-11-04T10:00:00Z' },
   ]);
 });
 

@@ -10,8 +10,11 @@ import Captcha from '@/components/Captcha';
 import { honeypotTripped } from '@/lib/honeypot';
 import { isValidPhone, PHONE_ERROR } from '@/lib/phone';
 import { captchaSiteKey, sendPublic } from '@/lib/publicSubmit';
+import { normalizeSlot } from '@/lib/data';
 import { DiwanCheckbox, SlotPicker } from '@/components/FormControls';
-import type { BookingRequest } from '@/types';
+import AvailabilityHint from '@/components/AvailabilityHint';
+import { requestDateFromHash } from '@/lib/route';
+import type { Booking, BookingRequest } from '@/types';
 
 
 type RequestForm = Pick<BookingRequest,
@@ -36,8 +39,14 @@ const NAME_FIELDS: { key: 'first_name' | 'second_name' | 'third_name' | 'last_na
   { key: 'last_name', label: 'اسم العائلة' },
 ];
 
-export default function RequestPage() {
-  const [form, setForm] = useState<RequestForm>(EMPTY_FORM);
+const todayStr = () => format(new Date(), 'yyyy-MM-dd');
+
+export default function RequestPage({ bookings = [] }: { bookings?: Booking[] }) {
+  // "Request this day" on the calendar arrives as #/request?date=2026-12-04.
+  const [form, setForm] = useState<RequestForm>(() => {
+    const date = requestDateFromHash(window.location.hash);
+    return { ...EMPTY_FORM, date: date && date >= todayStr() ? date : '' };
+  });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
@@ -160,6 +169,7 @@ export default function RequestPage() {
             <SlotPicker value={form.time_slot} onChange={slot => set('time_slot', slot)} labelId="req-slot-heading" />
           </div>
         </div>
+        <AvailabilityHint bookings={bookings} date={form.date} slot={normalizeSlot(form.time_slot)} today={new Date()} onPick={({ date, slot }) => setForm(f => ({ ...f, date: date ?? f.date, time_slot: slot ?? f.time_slot }))} />
 
         <div className="space-y-1.5">
           <Label htmlFor="req-event" className="font-body text-sm font-medium">اسم المناسبة *</Label>

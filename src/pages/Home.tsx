@@ -111,7 +111,7 @@ export default function Home() {
       case 'events':
         return <EventsPage bookings={bookings} />;
       case 'request':
-        return <RequestPage />;
+        return <RequestPage bookings={bookings} />;
       case 'reviews':
         return <ReviewsPage />;
       case 'stats':

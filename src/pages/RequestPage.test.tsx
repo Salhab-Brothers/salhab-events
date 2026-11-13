@@ -5,6 +5,7 @@ import userEvent from '@/test/user';
 const { BookingRequest } = vi.hoisted(() => ({ BookingRequest: { create: vi.fn() } }));
 vi.mock('@/api/api', () => ({ entities: { BookingRequest } }));
 
+import { makeBooking } from '@/test/factories';
 import RequestPage from './RequestPage';
 
 beforeEach(() => {
@@ -116,5 +117,52 @@ describe('RequestPage', () => {
     expect(afternoon).toHaveAttribute('aria-pressed', 'false');
     await userEvent.click(afternoon);
     expect(afternoon).toHaveAttribute('aria-pressed', 'true');
+  });
+});
+
+describe('RequestPage: availability', () => {
+  const taken = [makeBooking({ date: '2099-07-01', time_slot: 'lunch', event_name: 'عرس قائم' })];
+  const pickDate = (container: HTMLElement, value: string) =>
+    fireEvent.change(container.querySelector('input[type="date"]')!, { target: { value } });
+
+  it('says a free date and slot is available', () => {
+    const { container } = render(<RequestPage bookings={taken} />);
+    pickDate(container, '2099-07-02');
+    expect(screen.getByRole('status')).toHaveTextContent('هذا الموعد متاح');
+  });
+
+  it('warns about a taken slot and offers the open slots of that day', async () => {
+    const { container } = render(<RequestPage bookings={taken} />);
+    pickDate(container, '2099-07-01');
+    expect(screen.getByRole('status')).toHaveTextContent('محجوز');
+    await userEvent.click(within(screen.getByRole('status')).getByRole('button', { name: 'عصراً' }));
+    expect(screen.getByRole('status')).toHaveTextContent('هذا الموعد متاح');
+  });
+
+  it('offers other days when the whole day is taken, and still lets the request be sent', async () => {
+    const full = [makeBooking({ date: '2099-07-01', time_slot: 'full' })];
+    const { container } = render(<RequestPage bookings={full} />);
+    pickDate(container, '2099-07-01');
+    const buttons = within(screen.getByRole('status')).getAllByRole('button');
+    expect(buttons).toHaveLength(3);
+    await userEvent.click(buttons[0]);
+    expect((container.querySelector('input[type="date"]') as HTMLInputElement).value).toBe('2099-07-02');
+  });
+
+  it('suggests the nearest free weekend when no date is chosen', async () => {
+    const { container } = render(<RequestPage bookings={[]} />);
+    await userEvent.click(screen.getByRole('button', { name: /أقرب جمعة أو سبت متاح/ }));
+    expect((container.querySelector('input[type="date"]') as HTMLInputElement).value).not.toBe('');
+  });
+
+  it('starts with the day chosen on the calendar, unless it is already past', () => {
+    window.location.hash = '#/request?date=2099-08-08';
+    const { container, unmount } = render(<RequestPage />);
+    expect((container.querySelector('input[type="date"]') as HTMLInputElement).value).toBe('2099-08-08');
+    unmount();
+    window.location.hash = '#/request?date=2001-01-01';
+    const again = render(<RequestPage />);
+    expect((again.container.querySelector('input[type="date"]') as HTMLInputElement).value).toBe('');
+    window.location.hash = '';
   });
 });

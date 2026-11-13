@@ -25,6 +25,7 @@ export default function Home() {
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [initialized, setInitialized] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [hasReviews, setHasReviews] = useState(false);
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const mainRef = useRef<HTMLElement>(null);
 
@@ -53,6 +54,14 @@ export default function Home() {
   useEffect(() => {
     fetchData().then(() => setInitialized(true));
   }, [fetchData]);
+
+  // The Reviews entry in the menu stays hidden until someone has an approved review to show.
+  // (The page itself still opens from its address, so the first reviews can be collected.)
+  useEffect(() => {
+    entities.Review.list('-created_date', 50)
+      .then(rows => setHasReviews(rows.some(r => r.approved)))
+      .catch(() => setHasReviews(false));
+  }, [isAdmin]);
 
   const showPage = useCallback((page: PageId) => {
     setEditingBooking(null);
@@ -140,6 +149,7 @@ export default function Home() {
         setActivePage={handlePageChange}
         theme={theme}
         toggleTheme={toggle}
+        showReviews={hasReviews}
       />
       <main id="main-content" ref={mainRef} tabIndex={-1} className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 focus:outline-none">
         <Suspense fallback={<div className="min-h-[40vh]" />}>{renderPage()}</Suspense>

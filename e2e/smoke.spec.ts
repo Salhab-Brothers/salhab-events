@@ -7,10 +7,13 @@ test('home loads and public pages render without errors', async ({ page }) => {
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
   await expect(page.locator('main')).not.toBeEmpty();
-  for (const label of ['المناسبات', 'طلب حجز', 'التقييمات', 'الإحصائيات']) {
+  for (const label of ['المناسبات', 'طلب حجز', 'الإحصائيات']) {
     await nav(page, label);
     await expect(page.locator('main')).not.toBeEmpty();
   }
+  // Reviews has no menu entry until a review is approved, but its address always works.
+  await page.goto('/#/reviews');
+  await expect(page.locator('main')).not.toBeEmpty();
   expect(errors).toEqual([]);
 });
 

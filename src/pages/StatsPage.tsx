@@ -2,8 +2,9 @@ import { useMemo, type ReactNode } from 'react';
 import { parseISO, isAfter, startOfToday } from 'date-fns';
 import { LEVANTINE_MONTHS } from '@/lib/levantineMonths';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { CalendarDays, TrendingUp, Clock, CheckCircle } from 'lucide-react';
+import { CalendarDays, TrendingUp, Clock, CheckCircle, CalendarCheck, Flame } from 'lucide-react';
 import { normalizeSlot, type CanonicalSlot } from '@/lib/data';
+import { busiestMonth, eventTypeCounts, shortMonth, weekendAvailability } from '@/lib/stats';
 import type { Booking } from '@/types';
 
 const SLOT_COLORS: Record<CanonicalSlot, string> = { lunch: '#f59e0b', afternoon: '#3b82f6', wedding: '#7c3aed', full: '#ef4444' };
@@ -72,11 +73,19 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
     return DAY_NAMES.map((name, i) => ({ name, count: counts[i] }));
   }, [active]);
 
+  // Fridays and Saturdays still free or booked in the coming months, and the kinds of event held.
+  const weekendData = useMemo(() => weekendAvailability(active, today), [active, today]);
+  const typeData = useMemo(() => eventTypeCounts(active), [active]);
+  const freeWeekendDays = weekendData.slice(0, 3).reduce((sum, m) => sum + m.free, 0);
+  const busiest = useMemo(() => busiestMonth(active), [active]);
+
   const statCards = [
     { icon: CalendarDays, label: 'إجمالي الحجوزات', value: active.length, color: 'text-primary', bg: 'bg-primary/10' },
     { icon: TrendingUp, label: 'المناسبات القادمة', value: upcoming, color: 'text-amber-700 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/30' },
     { icon: CheckCircle, label: 'المناسبات المنتهية', value: past, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
     { icon: Clock, label: 'الوقت الأكثر حجزاً', value: slotData.length ? slotData[0].name : '-', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30' },
+    { icon: CalendarCheck, label: 'جمعات وسبوت متاحة خلال 3 أشهر', value: freeWeekendDays, color: 'text-teal-700 dark:text-teal-400', bg: 'bg-teal-50 dark:bg-teal-950/30' },
+    { icon: Flame, label: 'أكثر شهر ازدحاماً', value: busiest ? busiest.month : '-', color: 'text-rose-700 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-950/30' },
   ];
 
   return (
@@ -87,7 +96,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 gap-3 mb-8 min-[22rem]:grid-cols-2 sm:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 mb-8 min-[22rem]:grid-cols-2 sm:grid-cols-3">
         {statCards.map(({ icon: Icon, label, value, color, bg }) => (
           <div key={label} className={`flex min-w-0 items-center gap-3 p-4 rounded-xl border border-border/50 ${bg} shadow-sm`}>
             <div className={`p-2 rounded-lg bg-white/60 dark:bg-black/20 ${color}`}>
@@ -171,6 +180,46 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
                 })}
               </div>
             </>
+          )}
+        </div>
+
+        {/* Weekends: the days families want most */}
+        <div className="bg-card border border-border/50 rounded-2xl p-5 shadow-sm">
+          <h2 className="font-heading font-bold text-base text-foreground mb-1">الجمعات والسبوت القادمة</h2>
+          <p className="text-xs font-body text-muted-foreground mb-4">كم منها محجوز وكم ما زال متاحاً، شهراً بشهر</p>
+          <ChartFrame summary={weekendData.map(d => `${d.month}: ${d.booked} محجوز، ${d.free} متاح`)}>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart accessibilityLayer={false} data={weekendData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+              <XAxis dataKey="month" interval={0} tickFormatter={shortMonth} tick={{ fontSize: 10, fontFamily: 'Cairo' }} />
+              <YAxis width={28} axisLine={false} tickLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
+              <Tooltip formatter={(v, name) => [v, name === 'booked' ? 'محجوز' : 'متاح']} contentStyle={{ fontFamily: 'Cairo', fontSize: 12, direction: 'rtl' }} />
+              <Bar dataKey="booked" stackId="weekend" fill="hsl(var(--primary))" isAnimationActive={animate} />
+              <Bar dataKey="free" stackId="weekend" fill="hsl(var(--muted-foreground) / 0.3)" radius={[4, 4, 0, 0]} isAnimationActive={animate} />
+            </BarChart>
+          </ResponsiveContainer>
+          </ChartFrame>
+          <div className="flex justify-center gap-5 mt-3 font-body text-sm text-foreground">
+            <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-primary" />محجوز</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-muted-foreground/30" />متاح</span>
+          </div>
+        </div>
+
+        {/* Kinds of event */}
+        <div className="bg-card border border-border/50 rounded-2xl p-5 shadow-sm">
+          <h2 className="font-heading font-bold text-base text-foreground mb-4">أنواع المناسبات</h2>
+          {typeData.length === 0 ? (
+            <p className="text-sm font-body text-muted-foreground text-center py-10">لا توجد بيانات</p>
+          ) : (
+            <ChartFrame summary={typeData.map(d => `${d.type}: ${d.count}`)}>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart accessibilityLayer={false} data={typeData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                <XAxis dataKey="type" tick={{ fontSize: 11, fontFamily: 'Cairo' }} />
+                <YAxis width={28} axisLine={false} tickLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
+                <Tooltip formatter={(v) => [v, 'مناسبة']} contentStyle={{ fontFamily: 'Cairo', fontSize: 12, direction: 'rtl' }} />
+                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} isAnimationActive={animate} />
+              </BarChart>
+            </ResponsiveContainer>
+            </ChartFrame>
           )}
         </div>
 

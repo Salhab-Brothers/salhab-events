@@ -30,7 +30,8 @@ const card = (label: string) => screen.getByText(label).parentElement!;
 describe('StatsPage', () => {
   it('shows empty states without bookings', () => {
     render(<StatsPage bookings={[]} />);
-    expect(screen.getAllByText('لا توجد بيانات')).toHaveLength(3);
+    expect(screen.getAllByText('لا توجد بيانات')).toHaveLength(4);
+    expect(card('أكثر شهر ازدحاماً')).toHaveTextContent('-');
     expect(card('الوقت الأكثر حجزاً')).toHaveTextContent('-');
     expect(card('إجمالي الحجوزات')).toHaveTextContent('0');
   });
@@ -45,6 +46,28 @@ describe('StatsPage', () => {
     expect(card('إجمالي الحجوزات')).toHaveTextContent('3');
     expect(card('المناسبات القادمة')).toHaveTextContent('2');
     expect(card('المناسبات المنتهية')).toHaveTextContent('1');
+  });
+
+  it('counts the free Fridays and Saturdays of the next three months and names the busiest month', () => {
+    // From 15 June 2026: 4 + 9 + 9 weekend days in June, July and August; one Friday is taken.
+    render(<StatsPage bookings={[
+      makeBooking({ id: '1', date: '2026-06-19', event_name: 'زفاف أ' }),
+      makeBooking({ id: '2', date: '2026-07-04', event_name: 'زفاف ب' }),
+      makeBooking({ id: '3', date: '2026-07-20', event_name: 'غداء ج' }),
+    ]} />);
+    expect(card('جمعات وسبوت متاحة خلال 3 أشهر')).toHaveTextContent('20');
+    expect(card('أكثر شهر ازدحاماً')).toHaveTextContent('تموز 2026');
+  });
+
+  it('describes weekend availability and the kinds of event for screen readers', () => {
+    render(<StatsPage bookings={[
+      makeBooking({ id: '1', date: '2026-06-19', event_name: 'زفاف أ' }),
+      makeBooking({ id: '2', date: '2026-06-20', event_name: 'خطوبة ب' }),
+      makeBooking({ id: '3', date: '2026-06-26', event_name: 'زفاف ج' }),
+    ]} />);
+    expect(screen.getByText('حزيران: 3 محجوز، 1 متاح')).toBeInTheDocument();
+    expect(screen.getByText('زفاف: 2')).toBeInTheDocument();
+    expect(screen.getByText('خطوبة: 1')).toBeInTheDocument();
   });
 
   it('reports the most popular slot, merging legacy names', () => {

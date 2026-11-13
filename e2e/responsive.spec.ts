@@ -21,9 +21,15 @@ const SLOTS = ['lunch', 'afternoon', 'wedding', 'full'] as const;
 
 test.beforeAll(seedAdmin);
 
+/** Seeding must not fail quietly, or the sweep would test an empty page and pass. */
+async function seed(table: string, rows: object[]) {
+  const { error } = await service.from(table).insert(rows);
+  if (error) throw new Error(`seeding ${table} failed: ${error.message}`);
+}
+
 test.beforeEach(async () => {
   await resetData();
-  await service.from('bookings').insert(Array.from({ length: 16 }, (_, i) => ({
+  await seed('bookings', Array.from({ length: 16 }, (_, i) => ({
     date: futureDate(10 + i * 21),
     event_name: `${i % 2 ? 'زفاف' : 'غداء وزفاف'} ${NAMES[i % NAMES.length]}`,
     time_slot: SLOTS[i % 4],
@@ -32,11 +38,11 @@ test.beforeEach(async () => {
     status: 'confirmed',
     book_diwan: i % 3 === 0,
   })));
-  await service.from('booking_requests').insert([0, 1].map(i => ({
+  await seed('booking_requests', [0, 1].map(i => ({
     first_name: 'محمد', second_name: 'أحمد', third_name: 'عبدالله', last_name: 'سلهب', phone: '0507776655',
     date: futureDate(30 + i), time_slot: SLOTS[i], event_name: `حفل زفاف ${NAMES[i]}`, status: 'pending',
   })));
-  await service.from('reviews').insert([
+  await seed('reviews', [
     { reviewer_name: 'ليلى', rating: 4, comment: 'جميل جداً', approved: true },
     { reviewer_name: 'نور', rating: 5, comment: 'ينتظر المراجعة', approved: false },
   ]);

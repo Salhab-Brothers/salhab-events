@@ -71,7 +71,7 @@ Real browser tests (Playwright) run against a throwaway copy of the backend in D
 - `npm run e2e:db:stop`: stop the local backend.
 - `E2E_BASE_URL=https://salhab-events.vercel.app npm run e2e:smoke`: read-only checks against the live site (no data written).
 
-Local tests use Cloudflare's public always-pass captcha keys. CI runs the same suite as the `e2e` job.
+Local tests use Cloudflare's public always-pass captcha keys. CI (`.github/workflows/ci.yml`) runs the same suite. It starts three kinds of job together: **Code quality** (types, lint, unit tests with the coverage gate, build), the **browser tests** (one job per browser or kind of test, each with its own throwaway backend, so they run side by side), and **All checks passed**, which succeeds only if everything else did. That last one is the only check branch protection needs to require, so adding a browser or a test job is one line in the workflow and no settings change.
 
 The suite also checks accessibility with axe (WCAG A and AA, serious and critical problems fail the build) on every public page and every admin tab, in a desktop and a phone-sized browser (the `mobile` project in `playwright.config.ts`). Pages have their own addresses (`#/events`, `#/reviews`, ...), so back, forward, reload and shared links work.
 

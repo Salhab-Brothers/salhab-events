@@ -1,4 +1,4 @@
-name: ci
+name: CI
 on:
   push:
     branches: [main]
@@ -11,12 +11,16 @@ concurrency:
 permissions:
   contents: read
 
-# Required checks on main: check, e2e, e2e-safari. The browser tests are split over several
-# jobs that run side by side (each with its own throwaway backend, so they cannot disturb each
-# other); the "e2e" job at the end only reports whether all of them passed. Wall clock is the
-# slowest job, not the sum.
+# Three kinds of job, all started together:
+#   1. "Code quality": types, lint, unit tests (95% coverage gate) and the production build. Needs no browser.
+#   2. "Browser tests": the site in real browsers against a throwaway local backend (Docker), never
+#      production data. They share one database, so every job here has its own backend and they run
+#      side by side. Add a browser or a kind of test by adding one line to the list below.
+#   3. "All checks passed": the one job to require under Settings, Branches. It passes only when
+#      everything above passed, so adding or renaming a job above never needs a settings change.
 jobs:
-  check:
+  quality:
+    name: Code quality (types, lint, unit tests, build)
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -35,26 +39,45 @@ jobs:
       # Not "npm run build": that runs the typecheck again.
       - run: npx vite build
 
-  # Real browser (Chrome engine, desktop and phone) against a throwaway local backend (Docker); never touches production data.
-  e2e-shard:
-    name: e2e (${{ matrix.name }})
+  browser-tests:
+    name: ${{ matrix.name }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { name: desktop, projects: '--project=chromium' }
-          - { name: responsive, projects: '--project=responsive' }
-          - { name: visual, projects: '--project=visual' }
-          - { name: phone-and-pwa, projects: '--project=mobile --project=pwa' }
+          - name: 'Chrome: behaviour and accessibility'
+            id: chrome
+            browsers: chromium
+            projects: --project=chromium
+          - name: 'Chrome on a phone: accessibility and the installable app'
+            id: chrome-phone
+            browsers: chromium
+            projects: --project=mobile --project=pwa
+          - name: 'Layout: every page at every screen size'
+            id: layout
+            browsers: chromium
+            projects: --project=responsive
+          - name: 'Screenshots: compare every page with the approved look'
+            id: screenshots
+            browsers: chromium
+            projects: --project=visual
+          - name: 'Safari: Mac and iPhone'
+            id: safari
+            browsers: webkit
+            projects: --project=safari --project=iphone
+          - name: 'Firefox: behaviour and text size'
+            id: firefox
+            browsers: firefox
+            projects: --project=firefox
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/e2e-setup
         with:
-          browsers: chromium
+          browsers: ${{ matrix.browsers }}
       - run: npm run e2e -- ${{ matrix.projects }}
       - name: Backend logs
         if: failure()
@@ -62,66 +85,23 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
-          name: playwright-report-${{ matrix.name }}
+          name: playwright-report-${{ matrix.id }}
           path: |
             playwright-report/
             test-results/
             e2e/visual.spec.ts-snapshots/
           retention-days: 7
 
-  # The required "e2e" check: passes only when every job above passed (a skipped or cancelled one fails it).
-  e2e:
+  all-checks-passed:
+    name: All checks passed
     if: ${{ always() }}
-    needs: e2e-shard
+    needs: [quality, browser-tests]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
-      - name: All browser test jobs passed
+      - name: Everything above passed (a failed, skipped or cancelled job fails this)
         env:
-          RESULT: ${{ needs.e2e-shard.result }}
+          RESULTS: ${{ needs.quality.result }} ${{ needs.browser-tests.result }}
         run: |
-          echo "browser test jobs: $RESULT"
-          test "$RESULT" = success
-
-  # The same behaviour specs in Safari's engine (WebKit). A separate job so it runs in parallel and PRs do not wait longer.
-  e2e-safari:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/e2e-setup
-        with:
-          browsers: webkit
-      - run: npm run e2e -- --project=safari --project=iphone
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: failure()
-        with:
-          name: playwright-report-safari
-          path: |
-            playwright-report/
-            test-results/
-          retention-days: 7
-
-  # The same behaviour specs in Firefox's engine. Not a required check yet: add it under
-  # Settings, Branches once it has been green for a while.
-  e2e-firefox:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/e2e-setup
-        with:
-          browsers: firefox
-      - run: npm run e2e -- --project=firefox
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: failure()
-        with:
-          name: playwright-report-firefox
-          path: |
-            playwright-report/
-            test-results/
-          retention-days: 7
+          echo "code quality, browser tests: $RESULTS"
+          test "$RESULTS" = "success success"

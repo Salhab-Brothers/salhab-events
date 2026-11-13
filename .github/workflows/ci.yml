@@ -11,12 +11,18 @@ concurrency:
 permissions:
   contents: read
 
+# Required checks on main: check, e2e, e2e-safari. The browser tests are split over several
+# jobs that run side by side (each with its own throwaway backend, so they cannot disturb each
+# other); the "e2e" job at the end only reports whether all of them passed. Wall clock is the
+# slowest job, not the sum.
 jobs:
   check:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
@@ -26,50 +32,95 @@ jobs:
       - run: npm run lint
       # Fails below 95% statements, branches, functions or lines (see vite.config.ts).
       - run: npm run test:coverage
-      - run: npm run build
+      # Not "npm run build": that runs the typecheck again.
+      - run: npx vite build
 
   # Real browser (Chrome engine, desktop and phone) against a throwaway local backend (Docker); never touches production data.
-  e2e:
+  e2e-shard:
+    name: e2e (${{ matrix.name }})
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: desktop, projects: '--project=chromium' }
+          - { name: responsive, projects: '--project=responsive' }
+          - { name: visual, projects: '--project=visual' }
+          - { name: phone-and-pwa, projects: '--project=mobile --project=pwa' }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      - run: npm run e2e:db
-      - run: npm run e2e -- --project=chromium --project=mobile --project=pwa --project=visual
+          persist-credentials: false
+      - uses: ./.github/actions/e2e-setup
+        with:
+          browsers: chromium
+      - run: npm run e2e -- ${{ matrix.projects }}
+      - name: Backend logs
+        if: failure()
+        run: docker ps -a && for c in $(docker ps -aq); do echo "== $c"; docker logs --tail 40 "$c" 2>&1; done
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.name }}
           path: |
             playwright-report/
             test-results/
             e2e/visual.spec.ts-snapshots/
           retention-days: 7
 
+  # The required "e2e" check: passes only when every job above passed (a skipped or cancelled one fails it).
+  e2e:
+    if: ${{ always() }}
+    needs: e2e-shard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: All browser test jobs passed
+        env:
+          RESULT: ${{ needs.e2e-shard.result }}
+        run: |
+          echo "browser test jobs: $RESULT"
+          test "$RESULT" = success
+
   # The same behaviour specs in Safari's engine (WebKit). A separate job so it runs in parallel and PRs do not wait longer.
   e2e-safari:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npx playwright install --with-deps webkit
-      - run: npm run e2e:db
+          persist-credentials: false
+      - uses: ./.github/actions/e2e-setup
+        with:
+          browsers: webkit
       - run: npm run e2e -- --project=safari --project=iphone
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
           name: playwright-report-safari
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  # The same behaviour specs in Firefox's engine. Not a required check yet: add it under
+  # Settings, Branches once it has been green for a while.
+  e2e-firefox:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/e2e-setup
+        with:
+          browsers: firefox
+      - run: npm run e2e -- --project=firefox
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: playwright-report-firefox
           path: |
             playwright-report/
             test-results/

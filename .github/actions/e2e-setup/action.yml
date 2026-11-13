@@ -1,0 +1,37 @@
+name: e2e setup
+description: Installs dependencies and the browser, and starts the throwaway local backend (Docker) the e2e specs run against.
+inputs:
+  browsers:
+    description: Playwright browsers to install (chromium, webkit, firefox)
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: 22
+        cache: npm
+    - run: npm ci
+      shell: bash
+    # The backend (image downloads) and the browser (system packages) are independent, so they
+    # start together. The backend start is retried because a registry hiccup would otherwise fail
+    # the whole run for no reason in the code.
+    - name: Start the backend and install the browser
+      shell: bash
+      env:
+        BROWSERS: ${{ inputs.browsers }}
+      run: |
+        start_backend() {
+          for attempt in 1 2 3; do
+            npm run e2e:db && return 0
+            echo "backend start failed (attempt $attempt)"
+            npx supabase stop --no-backup || true
+            sleep 5
+          done
+          return 1
+        }
+        start_backend > backend.log 2>&1 &
+        backend=$!
+        npx playwright install --with-deps $BROWSERS
+        wait "$backend" || { cat backend.log; exit 1; }
+        tail -n 5 backend.log

@@ -234,7 +234,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
             <ChartFrame summary={dayData.map(d => `${d.name}: ${d.count}`)}>
             <ResponsiveContainer width="100%" height={160}>
               <BarChart accessibilityLayer={false} data={dayData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                <XAxis dataKey="name" tick={TICK} />
+                <XAxis dataKey="name" interval={0} tick={{ ...TICK, fontSize: 12 }} />
                 <YAxis width={28} axisLine={false} tickLine={false} tick={TICK} allowDecimals={false} />
                 <Tooltip formatter={(v) => [v, 'حجز']} contentStyle={{ fontFamily: CAIRO, fontSize: 14, direction: 'rtl' }} />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]} isAnimationActive={animate}>

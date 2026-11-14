@@ -7,6 +7,8 @@ import { normalizeSlot, type CanonicalSlot } from '@/lib/data';
 import { busiestMonth, eventTypeCounts, shortMonth, weekendAvailability } from '@/lib/stats';
 import type { Booking } from '@/types';
 
+const CAIRO = "'Cairo Variable', sans-serif";
+const TICK = { fontSize: 13, fontFamily: CAIRO };
 const SLOT_COLORS: Record<CanonicalSlot, string> = { lunch: '#f59e0b', afternoon: '#3b82f6', wedding: '#7c3aed', full: '#ef4444' };
 const SLOT_LABELS: Record<CanonicalSlot, string> = { lunch: 'غداء ظهراً', afternoon: 'خطبة / طلبة عصراً', wedding: 'حفل زفاف مساءاً', full: 'اليوم كاملاً' };
 const DAY_NAMES = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
@@ -103,7 +105,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
               <Icon size={18} />
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-body text-muted-foreground leading-tight">{label}</p>
+              <p className="text-sm font-body text-muted-foreground leading-tight">{label}</p>
               <p className={`font-heading font-bold text-lg leading-tight break-words ${color}`}>{value}</p>
             </div>
           </div>
@@ -120,11 +122,11 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
             <ChartFrame summary={monthlyData.map(d => `${d.month}: ${d.count}`)}>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart accessibilityLayer={false} data={monthlyData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                <XAxis dataKey="month" tick={{ fontSize: 10, fontFamily: 'Cairo' }} />
-                <YAxis width={28} axisLine={false} tickLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
+                <XAxis dataKey="month" tick={TICK} />
+                <YAxis width={28} axisLine={false} tickLine={false} tick={TICK} allowDecimals={false} />
                 <Tooltip
                   formatter={(v) => [v, 'حجز']}
-                  contentStyle={{ fontFamily: 'Cairo', fontSize: 12, direction: 'rtl' }}
+                  contentStyle={{ fontFamily: CAIRO, fontSize: 14, direction: 'rtl' }}
                 />
                 <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} isAnimationActive={animate} />
               </BarChart>
@@ -160,7 +162,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ fontFamily: 'Cairo', fontSize: 12, direction: 'rtl' }}
+                    contentStyle={{ fontFamily: CAIRO, fontSize: 14, direction: 'rtl' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -186,13 +188,13 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
         {/* Weekends: the days families want most */}
         <div className="bg-card border border-border/50 rounded-2xl p-5 shadow-sm">
           <h2 className="font-heading font-bold text-base text-foreground mb-1">الجمعات والسبوت القادمة</h2>
-          <p className="text-xs font-body text-muted-foreground mb-4">كم منها محجوز وكم ما زال متاحاً، شهراً بشهر</p>
+          <p className="text-sm font-body text-muted-foreground mb-4">كم منها محجوز وكم ما زال متاحاً، شهراً بشهر</p>
           <ChartFrame summary={weekendData.map(d => `${d.month}: ${d.booked} محجوز، ${d.free} متاح`)}>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart accessibilityLayer={false} data={weekendData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-              <XAxis dataKey="month" interval={0} tickFormatter={shortMonth} tick={{ fontSize: 10, fontFamily: 'Cairo' }} />
-              <YAxis width={28} axisLine={false} tickLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
-              <Tooltip formatter={(v, name) => [v, name === 'booked' ? 'محجوز' : 'متاح']} contentStyle={{ fontFamily: 'Cairo', fontSize: 12, direction: 'rtl' }} />
+              <XAxis dataKey="month" interval={0} tickFormatter={shortMonth} tick={TICK} />
+              <YAxis width={28} axisLine={false} tickLine={false} tick={TICK} allowDecimals={false} />
+              <Tooltip formatter={(v, name) => [v, name === 'booked' ? 'محجوز' : 'متاح']} contentStyle={{ fontFamily: CAIRO, fontSize: 14, direction: 'rtl' }} />
               <Bar dataKey="booked" stackId="weekend" fill="hsl(var(--primary))" isAnimationActive={animate} />
               <Bar dataKey="free" stackId="weekend" fill="hsl(var(--muted-foreground) / 0.3)" radius={[4, 4, 0, 0]} isAnimationActive={animate} />
             </BarChart>
@@ -213,9 +215,9 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
             <ChartFrame summary={typeData.map(d => `${d.type}: ${d.count}`)}>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart accessibilityLayer={false} data={typeData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                <XAxis dataKey="type" tick={{ fontSize: 11, fontFamily: 'Cairo' }} />
-                <YAxis width={28} axisLine={false} tickLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
-                <Tooltip formatter={(v) => [v, 'مناسبة']} contentStyle={{ fontFamily: 'Cairo', fontSize: 12, direction: 'rtl' }} />
+                <XAxis dataKey="type" tick={TICK} />
+                <YAxis width={28} axisLine={false} tickLine={false} tick={TICK} allowDecimals={false} />
+                <Tooltip formatter={(v) => [v, 'مناسبة']} contentStyle={{ fontFamily: CAIRO, fontSize: 14, direction: 'rtl' }} />
                 <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} isAnimationActive={animate} />
               </BarChart>
             </ResponsiveContainer>
@@ -232,9 +234,9 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
             <ChartFrame summary={dayData.map(d => `${d.name}: ${d.count}`)}>
             <ResponsiveContainer width="100%" height={160}>
               <BarChart accessibilityLayer={false} data={dayData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'Cairo' }} />
-                <YAxis width={28} axisLine={false} tickLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
-                <Tooltip formatter={(v) => [v, 'حجز']} contentStyle={{ fontFamily: 'Cairo', fontSize: 12, direction: 'rtl' }} />
+                <XAxis dataKey="name" interval={0} tick={{ ...TICK, fontSize: 12 }} />
+                <YAxis width={28} axisLine={false} tickLine={false} tick={TICK} allowDecimals={false} />
+                <Tooltip formatter={(v) => [v, 'حجز']} contentStyle={{ fontFamily: CAIRO, fontSize: 14, direction: 'rtl' }} />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]} isAnimationActive={animate}>
                   {dayData.map((_, i) => (
                     <Cell key={i} fill={i === 5 || i === 6 ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground) / 0.4)'} />

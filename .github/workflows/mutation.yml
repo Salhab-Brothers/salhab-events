@@ -16,9 +16,8 @@ on:
       - 'src/lib/**'
       - 'src/api/**'
       - 'supabase/functions/**'
-      - src/pages/AdminPage.tsx
-      - src/pages/RequestPage.tsx
-      - src/components/AvailabilityHint.tsx
+      - 'src/pages/**'
+      - 'src/components/**'
       - 'src/test/**'
       - stryker.config.json
       - vite.config.ts

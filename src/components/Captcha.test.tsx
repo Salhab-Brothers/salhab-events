@@ -36,7 +36,7 @@ describe('Captcha', () => {
     document.head.querySelector('script')!.dispatchEvent(new Event('load'));
     await waitFor(() => expect(turnstile.render).toHaveBeenCalled());
 
-    const opts = turnstile.render.mock.calls[0][1];
+    const opts = turnstile.render.mock.calls[0]![1]!;
     expect(opts.sitekey).toBe('site');
     opts.callback('tok');
     expect(onToken).toHaveBeenLastCalledWith('tok');
@@ -59,7 +59,7 @@ describe('Captcha', () => {
       await waitFor(() => expect(document.head.querySelector('script')).not.toBeNull());
       document.head.querySelector('script')!.dispatchEvent(new Event('load'));
       await waitFor(() => expect(turnstile.render).toHaveBeenCalled());
-      expect(turnstile.render.mock.calls[0][1].size).toBe(size);
+      expect(turnstile.render.mock.calls[0]![1]!.size).toBe(size);
       spy.mockRestore();
     });
 

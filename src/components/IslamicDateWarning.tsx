@@ -11,13 +11,14 @@ const TYPE_STYLE = {
 export default function IslamicDateWarning({ dateStr }: { dateStr: string }) {
   if (!dateStr) return null;
   const events = getIslamicEvents(dateStr);
-  if (!events.length) return null;
+  const first = events[0];
+  if (!first) return null;
 
-  const style = TYPE_STYLE[events[0].type] || TYPE_STYLE.ramadan_start;
+  const style = TYPE_STYLE[first.type] || TYPE_STYLE.ramadan_start;
 
   return (
     <div className={`flex items-start gap-2.5 rounded-xl border p-3 ${style.bg}`}>
-      <span className="text-lg leading-none mt-0.5">{events[0].emoji}</span>
+      <span className="text-lg leading-none mt-0.5">{first.emoji}</span>
       <div className={`text-sm font-body ${style.text}`}>
         <p className="font-semibold">تنبيه: هذا اليوم مناسبة إسلامية</p>
         <ul className="mt-0.5 space-y-0.5">

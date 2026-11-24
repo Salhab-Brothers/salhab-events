@@ -36,8 +36,8 @@ describe('EventCardDownload', () => {
     });
     await download(makeBooking({ event_name: 'زفاف أحمد وسارة', date: '2026-06-20' }));
     expect(clickSpy).toHaveBeenCalledTimes(1);
-    expect(created[0].download).toBe('زفاف-أحمد-وسارة-2026-06-20.jpg');
-    expect(created[0].href).toContain('data:image/jpeg');
+    expect(created[0]!.download).toBe('زفاف-أحمد-وسارة-2026-06-20.jpg');
+    expect(created[0]!.href).toContain('data:image/jpeg');
     expect(screen.getByRole('button')).toHaveTextContent('بطاقة');
     expect(screen.getByRole('button')).toBeEnabled();
   });

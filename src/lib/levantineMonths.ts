@@ -1,3 +1,5 @@
+import { parseISO } from 'date-fns';
+
 /**
  * Levantine (Syriac) Arabic month names.
  * Index 0 = January, Index 11 = December.
@@ -53,16 +55,13 @@ export function formatFullDate(date: Date | string | number) {
  * Format a date string "yyyy-MM-dd" as "الجمعة، 1 أيار، 5 / 2026"
  */
 export function formatFullDateStr(dateStr: string) {
-  // Parse as local date to avoid UTC offset shifting the day
-  const [y, m, d] = dateStr.split('-').map(Number);
-  return formatFullDate(new Date(y, m - 1, d));
+  // parseISO reads a date-only string as a local date, so the UTC offset cannot shift the day
+  return formatFullDate(parseISO(dateStr));
 }
 
 /**
  * Format a date string "yyyy-MM" or "yyyy-MM-dd" as "أيار، 5 / 2026"
  */
 export function formatMonthYearStr(dateStr: string) {
-  const [y, m] = dateStr.split('-').map(Number);
-  const monthName = LEVANTINE_MONTHS[m - 1];
-  return `${monthName}، ${m} / ${y}`;
+  return formatMonthYear(parseISO(dateStr));
 }

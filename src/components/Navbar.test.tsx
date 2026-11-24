@@ -41,7 +41,7 @@ describe('Navbar', () => {
 
   it('returns to the calendar from the logo', async () => {
     const { setActivePage } = setup({ activePage: 'reviews' });
-    await userEvent.click(screen.getAllByRole('button')[0]);
+    await userEvent.click(screen.getAllByRole('button')[0]!);
     expect(setActivePage).toHaveBeenCalledWith('calendar');
   });
 
@@ -59,11 +59,11 @@ describe('Navbar', () => {
   it('opens the mobile menu, navigates, and closes it', async () => {
     const { setActivePage } = setup({ activePage: 'events' });
     const buttons = screen.getAllByRole('button');
-    const menuToggle = buttons[buttons.length - 1];
+    const menuToggle = buttons[buttons.length - 1]!;
     await userEvent.click(menuToggle);
     const items = screen.getAllByText('التقييمات');
     expect(items).toHaveLength(2); // desktop + mobile
-    await userEvent.click(items[1]);
+    await userEvent.click(items[1]!);
     expect(setActivePage).toHaveBeenCalledWith('reviews');
     expect(screen.getAllByText('التقييمات')).toHaveLength(1); // menu closed again
   });
@@ -71,8 +71,8 @@ describe('Navbar', () => {
   it('marks the active page inside the mobile menu', async () => {
     setup({ activePage: 'request' });
     const buttons = screen.getAllByRole('button');
-    await userEvent.click(buttons[buttons.length - 1]);
-    const mobile = screen.getAllByText('طلب حجز')[1].closest('button')!;
+    await userEvent.click(buttons[buttons.length - 1]!);
+    const mobile = screen.getAllByText('طلب حجز')[1]!.closest('button')!;
     expect(mobile.className).toContain('bg-primary');
   });
 

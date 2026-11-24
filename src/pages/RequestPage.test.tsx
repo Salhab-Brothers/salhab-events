@@ -37,7 +37,7 @@ describe('RequestPage', () => {
       phone: '0501234567', date: '2099-07-01', time_slot: 'afternoon',
       event_name: 'عرس', book_diwan: true, status: 'pending',
     }));
-    expect(typeof BookingRequest.create.mock.calls[0][0].submitted_at).toBe('string');
+    expect(typeof BookingRequest.create.mock.calls[0]![0]!.submitted_at).toBe('string');
   });
 
   it('shows the Islamic date warning for a holiday', async () => {
@@ -145,7 +145,7 @@ describe('RequestPage: availability', () => {
     pickDate(container, '2099-07-01');
     const buttons = within(screen.getByRole('status')).getAllByRole('button');
     expect(buttons).toHaveLength(3);
-    await userEvent.click(buttons[0]);
+    await userEvent.click(buttons[0]!);
     expect((container.querySelector('input[type="date"]') as HTMLInputElement).value).toBe('2099-07-02');
   });
 

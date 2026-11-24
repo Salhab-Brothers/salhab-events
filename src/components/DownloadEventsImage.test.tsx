@@ -74,7 +74,7 @@ describe('DownloadEventsImage', () => {
     render(<DownloadEventsImage bookings={bookings} />);
     await userEvent.click(screen.getByRole('button', { name: /تحميل الصورة/ }));
     await waitFor(() => expect(html2canvas).toHaveBeenCalled());
-    const { onclone } = html2canvas.mock.calls[0][1] as { onclone: (d: Document) => void };
+    const { onclone } = html2canvas.mock.calls[0]![1]! as { onclone: (d: Document) => void };
 
     const doc = document.implementation.createHTMLDocument('x');
     doc.body.innerHTML = '<div data-printable style="max-width:960px"></div><h1 data-canvas-font></h1>';
@@ -120,7 +120,7 @@ describe('DownloadEventsImage: sharing', () => {
     render(<DownloadEventsImage bookings={bookings} />);
     await userEvent.click(screen.getByRole('button', { name: 'مشاركة' }));
     await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
-    expect(share.mock.calls[0][0].files[0].type).toBe('image/jpeg');
+    expect(share.mock.calls[0]![0]!.files[0]!.type).toBe('image/jpeg');
     expect(localStorage.getItem('salhab_image_timestamp')).toBeTruthy();
   });
 

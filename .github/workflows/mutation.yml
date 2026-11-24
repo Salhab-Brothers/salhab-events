@@ -1,9 +1,10 @@
-# Mutation testing of the logic in src/lib (dates, availability, CSV, calendar files, routing...).
+# Mutation testing of the logic: src/lib (dates, availability, CSV, calendar files, routing...), the API client,
+# the submit function (captcha and validation) and the logic of the admin and request pages.
 # Stryker makes small deliberate mistakes in the code (flips a > to >=, empties a string) and reruns
 # the unit tests; a mistake the tests do not notice is a gap in the tests. Coverage says the code ran,
 # this says whether the tests would catch it being wrong.
 #   - Pull requests: only what the change touches is re-tested (incremental), reusing the results
-#     saved from main, so it takes about a minute. Skipped unless the logic or its tests changed.
+#     saved from main, so it takes about a minute. Skipped unless that code or its tests changed.
 #   - main and every Monday: the saved results are thrown away on Mondays and everything is re-tested
 #     (about 10 minutes), which refreshes the saved results for the pull requests.
 # Fails below the "break" score in stryker.config.json. Not part of the "All checks passed" gate:
@@ -13,6 +14,11 @@ on:
   pull_request:
     paths:
       - 'src/lib/**'
+      - 'src/api/**'
+      - 'supabase/functions/**'
+      - src/pages/AdminPage.tsx
+      - src/pages/RequestPage.tsx
+      - src/components/AvailabilityHint.tsx
       - 'src/test/**'
       - stryker.config.json
       - vite.config.ts

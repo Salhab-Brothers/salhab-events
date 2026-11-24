@@ -236,3 +236,77 @@ describe('AdminPage shell', () => {
     expect(p.onLogout).toHaveBeenCalled();
   });
 });
+
+describe('AdminPage tabs and details', () => {
+  const markers = { requests: 'لا توجد طلبات', bookings: 'لا توجد حجوزات', add: /add-tab/, reviews: 'reviews-tab', download: 'download-tab' };
+  const visible = () => Object.entries(markers).filter(([, m]) => screen.queryByText(m)).map(([k]) => k);
+
+  it('shows only the content of the open tab, and marks that tab as pressed', async () => {
+    render(<AdminPage {...props()} />);
+    expect(visible()).toEqual(['requests']);
+    for (const [name, key] of [['الحجوزات', 'bookings'], ['إضافة حجز', 'add'], ['التقييمات', 'reviews'], ['تحميل الصورة', 'download']] as const) {
+      await goTo(name);
+      expect(visible()).toEqual([key]);
+      expect(screen.getByRole('button', { name })).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getAllByRole('button', { pressed: true })).toHaveLength(1);
+    }
+  });
+
+  it('counts only the pending requests in the badge, and shows no badge without any', () => {
+    const three = [makeRequest({ id: 'a' }), makeRequest({ id: 'b' }), makeRequest({ id: 'c', status: 'approved' })];
+    const { unmount } = render(<AdminPage {...{ ...props(), requests: three }} />);
+    expect(screen.getByRole('button', { name: /الطلبات/ })).toHaveTextContent('2');
+    unmount();
+    render(<AdminPage {...{ ...props(), requests: [makeRequest({ status: 'rejected' })] }} />);
+    expect(screen.getByRole('button', { name: /الطلبات/ })).toHaveTextContent(/^الطلبات$/);
+  });
+
+  it('hides the empty states once there is something to show', async () => {
+    render(<AdminPage {...{ ...props(), requests: [makeRequest()], bookings: [makeBooking()] }} />);
+    expect(screen.queryByText('لا توجد طلبات')).toBeNull();
+    await goTo('الحجوزات');
+    expect(screen.queryByText('لا توجد حجوزات')).toBeNull();
+  });
+
+  it('disables the reject button while rejecting', async () => {
+    let finish!: () => void;
+    BookingRequest.update.mockReturnValue(new Promise<void>((r) => { finish = r; }));
+    render(<AdminPage {...{ ...props(), requests: [makeRequest()] }} />);
+    expect(screen.getByRole('button', { name: 'رفض' })).toBeEnabled();
+    await userEvent.click(screen.getByRole('button', { name: 'رفض' }));
+    expect(screen.getByRole('button', { name: 'رفض' })).toBeDisabled();
+    finish();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'رفض' })).toBeEnabled());
+  });
+
+  it('shows the diwan badge only on bookings that have one, and labels the row buttons by event', async () => {
+    render(<AdminPage {...{ ...props(), bookings: [makeBooking({ event_name: 'عرس سامي', book_diwan: false })] }} />);
+    await goTo('الحجوزات');
+    expect(screen.queryByText('🏛️ الديوان')).toBeNull();
+    expect(screen.getByRole('button', { name: 'تعديل عرس سامي' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'حذف عرس سامي' })).toBeInTheDocument();
+  });
+
+  it('exports a CSV with the bookings in it, named for the hall', async () => {
+    const seen: { blob?: Blob; name?: string } = {};
+    Object.assign(URL, { createObjectURL: vi.fn((b: Blob) => { seen.blob = b; return 'blob:x'; }), revokeObjectURL: vi.fn() });
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) { seen.name = this.download; });
+    render(<AdminPage {...{ ...props(), bookings: [makeBooking({ event_name: 'عرس سامي' })] }} />);
+    await goTo('الحجوزات');
+    await userEvent.click(screen.getByText('تصدير CSV'));
+    expect(seen.blob!.type).toBe('text/csv;charset=utf-8;');
+    expect(await seen.blob!.text()).toContain('عرس سامي');
+    expect(seen.name).toBe('حجوزات-آل-سلهب.csv');
+  });
+});
+
+describe('AdminPage wording and logging', () => {
+  it('labels a rejected request, and logs what went wrong when an action fails', async () => {
+    render(<AdminPage {...{ ...props(), requests: [makeRequest({ id: 'x', status: 'rejected' }), makeRequest({ id: 'y' })] }} />);
+    expect(screen.getByText('مرفوض')).toBeInTheDocument();
+    Booking.create.mockRejectedValue(new Error('down'));
+    await userEvent.click(screen.getByText('قبول'));
+    await waitFor(() => expect(console.error).toHaveBeenCalledWith('Admin action failed', expect.any(Error)));
+  });
+});
+

@@ -193,3 +193,16 @@ describe('pickServiceKey', () => {
     expect(pickServiceKey(undefined, undefined)).toBe('');
   });
 });
+
+describe('limits and defaults', () => {
+  it('accepts a phone of exactly 30 characters and exactly 15 digits', () => {
+    expect(isValidPhone('1'.repeat(10) + ' '.repeat(20))).toBe(true);
+    expect(isValidPhone('1'.repeat(15))).toBe(true);
+  });
+  it('stores the phone without the spaces around it', () => {
+    expect(requestRow({ ...goodRequest, phone: '  0545274483  ' }, NOW)?.phone).toBe('0545274483');
+  });
+  it('always allows the live site and the two local dev servers', () => {
+    expect([...allowedOrigins()]).toEqual(['https://salhab-events.vercel.app', 'http://localhost:5174', 'http://localhost:5173']);
+  });
+});

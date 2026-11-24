@@ -81,14 +81,14 @@ Breakpoints are in rem, so a reader who raises the browser's text size gets the 
 
 ## Mutation testing
 
-Coverage says the tests ran a line; mutation testing says whether they would notice if it were wrong. [Stryker](https://stryker-mutator.io) makes small deliberate mistakes in `src/lib` (the date, availability, CSV, calendar-file and routing logic), reruns the unit tests, and reports every mistake the tests let through.
+Coverage says the tests ran a line; mutation testing says whether they would notice if it were wrong. [Stryker](https://stryker-mutator.io) makes small deliberate mistakes in the logic: `src/lib` (dates, availability, CSV, calendar files, routing), the API client, the `submit` function (captcha and validation) and the admin and request pages, reruns the unit tests, and reports every mistake the tests let through.
 
 ```bash
 npm run mutation          # about 10 minutes the first time, seconds after (it remembers results)
 open reports/mutation/index.html   # every surviving mutant, with the line it changed
 ```
 
-In CI (`mutation.yml`) a pull request that touches `src/lib` re-tests only what changed, and fails below the score set as `break` in `stryker.config.json`. `main` and a weekly run re-test everything and refresh the saved results. A surviving mutant is either a missing test (write it) or a change that cannot alter behaviour (ignore it).
+In CI (`mutation.yml`) a pull request that touches that code re-tests only what changed, and fails below the score set as `break` in `stryker.config.json`. `main` and a weekly run re-test everything and refresh the saved results. A surviving mutant is either a missing test (write it) or a change that cannot alter behaviour (ignore it).
 
 ## Backups
 

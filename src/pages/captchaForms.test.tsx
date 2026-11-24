@@ -48,6 +48,25 @@ describe('captcha on the booking request form', () => {
   });
 });
 
+describe('after a failed send', () => {
+  it('asks for a fresh captcha: the old token is dropped and the widget is shown again', async () => {
+    invoke.mockResolvedValue({ error: new Error('down') });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { container } = renderWithQuery(<RequestPage />);
+    await userEvent.type(screen.getByLabelText('الاسم الأول'), 'خالد');
+    await userEvent.type(screen.getByLabelText('اسم العائلة'), 'سلهب');
+    await userEvent.type(screen.getByLabelText(/رقم الهاتف/), '0501234567');
+    fireEvent.change(container.querySelector('input[type="date"]')!, { target: { value: '2099-07-01' } });
+    await userEvent.type(screen.getByLabelText(/اسم المناسبة/), 'عرس');
+    const widget = screen.getByRole('button', { name: 'solve' });
+    await userEvent.click(widget);
+    await userEvent.click(screen.getByRole('button', { name: /إرسال/ }));
+    await screen.findByText(/تعذّر إرسال الطلب/);
+    expect(screen.getByRole('button', { name: /إرسال/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'solve' })).not.toBe(widget);   // a new widget, not the used one
+  });
+});
+
 describe('captcha on the review form', () => {
   it('blocks sending until solved, then sends through the verifying function', async () => {
     renderWithQuery(<ReviewsPage />);

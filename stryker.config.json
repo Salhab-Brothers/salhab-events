@@ -2,7 +2,7 @@
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
   "testRunner": "vitest",
   "plugins": ["@stryker-mutator/vitest-runner"],
-  "mutate": ["src/lib/**/*.ts", "!src/lib/**/*.test.ts"],
+  "mutate": ["src/lib/**/*.ts", "src/api/api.ts", "src/pages/AdminPage.tsx", "src/pages/RequestPage.tsx", "src/components/AvailabilityHint.tsx", "supabase/functions/**/*.ts", "!**/*.test.ts", "!supabase/functions/**/index.ts"],
   "coverageAnalysis": "perTest",
   "incremental": true,
   "incrementalFile": ".stryker-cache/incremental.json",

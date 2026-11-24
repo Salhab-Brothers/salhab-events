@@ -1,10 +1,14 @@
 import '@testing-library/jest-dom/vitest';
-import { afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
 // Supabase client needs these at import time; tests mock the network layer.
-vi.stubEnv('VITE_SUPABASE_URL', 'http://localhost:54321');
-vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', 'test-key');
+// Set before every test, not just once: a test that calls vi.unstubAllEnvs() would otherwise leave
+// the next one (which re-imports the client) without them, and only a local .env would hide it.
+beforeEach(() => {
+  vi.stubEnv('VITE_SUPABASE_URL', 'http://localhost:54321');
+  vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', 'test-key');
+});
 
 afterEach(() => {
   cleanup();

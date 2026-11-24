@@ -52,3 +52,8 @@ test-results/
 # local credentials and one-off SQL with passwords
 secrets/
 .restore-expected.json
+
+# Mutation testing
+.stryker-tmp
+.stryker-cache
+reports/

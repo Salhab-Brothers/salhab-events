@@ -74,3 +74,42 @@ describe('computeIslamicEvents', () => {
     for (let y = now - 1; y <= now + 4; y++) expect(years.has(String(y))).toBe(true);
   });
 });
+
+describe('day-by-day wording', () => {
+  const first = (type: string) => ISLAMIC_EVENTS.find(e => e.type === type)!;
+  const key = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  /** The label shown on each day of the first event of this type. */
+  const labels = (type: 'eid_fitr' | 'eid_adha') => {
+    const { date, days } = first(type);
+    const [y, m, d] = date.split('-').map(Number);
+    return Array.from({ length: days }, (_, i) => getIslamicEvents(key(new Date(y, m - 1, d + i))).find(e => e.type === type)?.label);
+  };
+
+  it('words every day of Eid al-Fitr', () => {
+    const label = first('eid_fitr').label;
+    expect(labels('eid_fitr')).toEqual([
+      `${label} (الاحتمال الأول)`, label, 'اليوم الثاني من 🌙 عيد الفطر', 'اليوم الثالث من عيد الفطر',
+    ]);
+  });
+  it('words every day of Eid al-Adha', () => {
+    const label = first('eid_adha').label;
+    expect(labels('eid_adha')).toEqual([
+      `${label} (الاحتمال الأول)`, label, 'اليوم الثاني من 🐑 عيد الأضحى', 'اليوم الثالث من عيد الأضحى', 'اليوم الرابع من عيد الأضحى',
+    ]);
+  });
+  it('keeps the names, emoji and length of each holiday', () => {
+    expect(first('ramadan_start')).toMatchObject({ label: 'بداية شهر رمضان المبارك (تقريبي)', emoji: '🌙', days: 1 });
+    expect(first('arafah')).toMatchObject({ label: 'يوم عرفة', emoji: '🕌', days: 1 });
+    expect(first('eid_fitr')).toMatchObject({ label: 'عيد الفطر المبارك', emoji: '🌙', days: 4 });
+    expect(first('eid_adha')).toMatchObject({ label: 'عيد الأضحى المبارك', emoji: '🐑', days: 5 });
+  });
+  it('marks only the first day of an event as first', () => {
+    const days = Object.values(buildIslamicDateMap()).flat();
+    expect(days.filter(d => d.dayIndex === 0).every(d => d.isFirst)).toBe(true);
+    expect(days.filter(d => d.dayIndex > 0).some(d => d.isFirst)).toBe(false);
+  });
+  it('writes every date key as yyyy-MM-dd, with zeros', () => {
+    for (const k of Object.keys(buildIslamicDateMap())) expect(k).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+  it('gives no style to an empty list', () => expect(getIslamicStyle([])).toBeNull());
+});

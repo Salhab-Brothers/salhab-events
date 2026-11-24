@@ -18,4 +18,14 @@ describe('eventToIcs', () => {
     expect(text).not.toContain('سر');
     expect(text).not.toContain('0509998877');
   });
+  it('is a complete, well-formed calendar file', () => {
+    const lines = ics.split('\r\n');
+    expect(lines.slice(0, 4)).toEqual(['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Salhab Events//AR', 'BEGIN:VEVENT']);
+    expect(lines.slice(-4)).toEqual(['LOCATION:قاعة أفراح آل سلهب', 'END:VEVENT', 'END:VCALENDAR', '']);
+    expect(lines.find(l => l.startsWith('DTSTAMP:'))).toMatch(/^DTSTAMP:\d{8}T\d{6}Z$/);
+  });
+  it('escapes backslashes and line breaks in the title', () => {
+    const text = eventToIcs(makeBooking({ event_name: 'a\\b\nc', time_slot: 'lunch' }));
+    expect(text).toContain('SUMMARY:a\\\\b\\nc (');
+  });
 });

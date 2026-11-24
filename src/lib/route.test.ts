@@ -20,3 +20,10 @@ describe('request date in the hash', () => {
   });
   it.each(['#/request', '#/request?date=soon', '#/request?x=1'])('has no date in %j', (h) => expect(requestDateFromHash(h)).toBeNull());
 });
+
+describe('route edge cases', () => {
+  it('only reads a leading #, not one in the middle', () => expect(pageFromHash('ad#/min')).toBe('calendar'));
+  it.each(['#/request?date=2026-12-04x', '#/request?date=x2026-12-04', '#/request?date=2026-12-4', '#/request'])(
+    'rejects the date in %s', (hash) => expect(requestDateFromHash(hash)).toBeNull());
+  it('reads a valid date', () => expect(requestDateFromHash('#/request?date=2026-12-04')).toBe('2026-12-04'));
+});

@@ -79,6 +79,17 @@ The suite also checks accessibility with axe (WCAG A and AA, serious and critica
 
 Breakpoints are in rem, so a reader who raises the browser's text size gets the compact layout earlier instead of a wide one that no longer fits. `e2e/text-size.spec.ts` checks that in Firefox with a real larger default text size, `e2e/keyboard.spec.ts` checks the skip link and the day dialog (Escape, focus kept inside, focus returned), and `e2e/visual.spec.ts` compares screenshots of every page with committed baselines (see `.github/workflows/visual-baselines.yml` for changing them on purpose). The dark mode choice is remembered in the browser; without one the site follows the device setting.
 
+## Mutation testing
+
+Coverage says the tests ran a line; mutation testing says whether they would notice if it were wrong. [Stryker](https://stryker-mutator.io) makes small deliberate mistakes in `src/lib` (the date, availability, CSV, calendar-file and routing logic), reruns the unit tests, and reports every mistake the tests let through.
+
+```bash
+npm run mutation          # about 10 minutes the first time, seconds after (it remembers results)
+open reports/mutation/index.html   # every surviving mutant, with the line it changed
+```
+
+In CI (`mutation.yml`) a pull request that touches `src/lib` re-tests only what changed, and fails below the score set as `break` in `stryker.config.json`. `main` and a weekly run re-test everything and refresh the saved results. A surviving mutant is either a missing test (write it) or a change that cannot alter behaviour (ignore it).
+
 ## Backups
 
 Free Supabase projects have no automatic backups, so `.github/workflows/backup.yml` exports the database (the `public` schema: bookings, requests, reviews, admins list) twice a week, encrypts it with GPG, and uploads it to a **private** Cloudflare R2 bucket (nothing is stored in this public repo). Admin logins are not in it: re-create them with the steps under "Admin accounts".

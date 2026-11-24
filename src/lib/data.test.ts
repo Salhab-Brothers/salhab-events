@@ -4,6 +4,13 @@ import {
 } from './data';
 import type { TimeSlot } from '@/types';
 
+describe('status wording', () => {
+  it('keeps the exact Arabic labels people see', () => {
+    expect(STATUS_LABELS).toEqual({ confirmed: 'مؤكد', pending: 'معلّق', cancelled: 'ملغي' });
+    expect(REQUEST_STATUS_LABELS).toEqual({ pending: 'بانتظار المراجعة', approved: 'مقبول', rejected: 'مرفوض' });
+  });
+});
+
 describe('data labels', () => {
   it('labels every current and legacy time slot', () => {
     const slots: TimeSlot[] = ['lunch', 'afternoon', 'wedding', 'full', 'morning', 'evening'];

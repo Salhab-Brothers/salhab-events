@@ -22,6 +22,20 @@ describe('eventTypeCounts', () => {
   it('is empty without bookings', () => expect(eventTypeCounts([])).toEqual([]));
 });
 
+describe('chart helpers', () => {
+  it('lists the kinds by count, not in the fixed order of kinds', () => {
+    const named = (event_name: string, n: number) => Array.from({ length: n }, (_, i) => makeBooking({ id: `${event_name}${i}`, event_name }));
+    expect(eventTypeCounts([...named('زفاف', 1), ...named('غداء', 2), ...named('تجمع', 3)]))
+      .toEqual([{ type: 'أخرى', count: 3 }, { type: 'غداء', count: 2 }, { type: 'زفاف', count: 1 }]);
+  });
+  it('shortens only a month name that ends in الأول or الثاني', () => {
+    expect(shortMonth('تشرين الأول')).toBe('تشرين 1');
+    expect(shortMonth('كانون الثاني')).toBe('كانون 2');
+    expect(shortMonth('تشرين الأول 2026')).toBe('تشرين الأول 2026');
+    expect(shortMonth('كانون الثاني 2026')).toBe('كانون الثاني 2026');
+  });
+});
+
 describe('busiestMonth', () => {
   it('finds the month with the most events', () => {
     expect(busiestMonth([

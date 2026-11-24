@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { freeSlots, isSlotFree, nextFreeDays, nextFreeWeekend } from './availability';
 import { makeBooking } from '@/test/factories';
+import { addDays, format } from 'date-fns';
 
 const day = '2026-06-20';   // a Saturday
 describe('availability', () => {
@@ -34,5 +35,19 @@ describe('availability', () => {
   it('returns null when a year has no free weekend', () => {
     const b = Array.from({ length: 400 }, (_, i) => makeBooking({ id: `${i}`, date: new Date(Date.UTC(2026, 5, 17 + i)).toISOString().slice(0, 10) }));
     expect(nextFreeWeekend(b, new Date(2026, 5, 17))).toBeNull();
+  });
+});
+
+describe('nextFreeDays reach and input', () => {
+  const from = new Date(2026, 0, 1);
+  const booked = (n: number) => Array.from({ length: n }, (_, i) =>
+    makeBooking({ id: `d${i}`, date: format(addDays(from, i + 1), 'yyyy-MM-dd') }));
+  it('looks a full year ahead: day 365 counts, day 366 does not', () => {
+    expect(nextFreeDays(booked(364), from, 1)).toEqual([format(addDays(from, 365), 'yyyy-MM-dd')]);
+    expect(nextFreeDays(booked(365), from, 1)).toEqual([]);
+  });
+  it('accepts the start as a Date or as an ISO date string', () => {
+    expect(nextFreeDays([], '20260101', 2)).toEqual(['2026-01-02', '2026-01-03']);
+    expect(nextFreeDays([], from, 2)).toEqual(['2026-01-02', '2026-01-03']);
   });
 });

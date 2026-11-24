@@ -1,0 +1,71 @@
+# Mutation testing of the logic in src/lib (dates, availability, CSV, calendar files, routing...).
+# Stryker makes small deliberate mistakes in the code (flips a > to >=, empties a string) and reruns
+# the unit tests; a mistake the tests do not notice is a gap in the tests. Coverage says the code ran,
+# this says whether the tests would catch it being wrong.
+#   - Pull requests: only what the change touches is re-tested (incremental), reusing the results
+#     saved from main, so it takes about a minute. Skipped unless the logic or its tests changed.
+#   - main and every Monday: the saved results are thrown away on Mondays and everything is re-tested
+#     (about 10 minutes), which refreshes the saved results for the pull requests.
+# Fails below the "break" score in stryker.config.json. Not part of the "All checks passed" gate:
+# it is skipped on pull requests that do not touch the logic, and a skipped required check blocks merging.
+name: mutation
+on:
+  pull_request:
+    paths:
+      - 'src/lib/**'
+      - 'src/test/**'
+      - stryker.config.json
+      - vite.config.ts
+      - package-lock.json
+      - .github/workflows/mutation.yml
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  mutation:
+    name: Mutation testing (src/lib)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # A pull request can read the results saved by main (a branch cannot read another branch's cache,
+      # but every branch can read the default branch's).
+      - id: saved
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .stryker-cache
+          key: stryker-${{ github.run_id }}
+          restore-keys: stryker-
+      - name: Start from scratch on the weekly run
+        if: github.event_name == 'schedule'
+        run: rm -rf .stryker-cache
+      - run: npx stryker run
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        # Only main writes the saved results; pull requests just read them.
+        if: always() && github.ref == 'refs/heads/main'
+        with:
+          path: .stryker-cache
+          key: stryker-${{ github.run_id }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: mutation-report
+          path: reports/mutation/
+          retention-days: 14

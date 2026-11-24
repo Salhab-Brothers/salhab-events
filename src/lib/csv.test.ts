@@ -16,16 +16,19 @@ describe('csvCell', () => {
     expect(csvCell('+972501234567')).toBe('"+972501234567"');
   });
 
+  it.each(['a=1', 'x@y.com', 'a-b', '1+1'])('leaves %s alone: only a formula start is risky', (v) => {
+    expect(csvCell(v)).toBe(`"${v}"`);
+  });
+
   it.each(['=SUM(A1)', '+1+1', '-1', '@cmd', '+cmd|calc'])('neutralises the formula start in %s', (v) => {
     expect(csvCell(v)).toBe(`"'${v}"`);
   });
 });
 
 describe('bookingsToCsv', () => {
-  it('starts with a BOM and a header row', () => {
+  it('starts with a BOM and the full header row', () => {
     const csv = bookingsToCsv([]);
-    expect(csv.startsWith('﻿"التاريخ"')).toBe(true);
-    expect(csv.split('\n')).toHaveLength(1);
+    expect(csv).toBe('\uFEFF' + ['التاريخ', 'المناسبة', 'الوقت', 'المسؤول', 'الهاتف', 'الحالة', 'الديوان', 'ملاحظات'].map(h => `"${h}"`).join(','));
   });
 
   it('lists bookings oldest first without mutating the input', () => {
@@ -46,6 +49,7 @@ describe('bookingsToCsv', () => {
     expect(row).toContain('"نعم"');
     expect(row).toContain('"pending"');
     expect(row.endsWith('"pending","نعم",""')).toBe(true);
+    expect(row.split(',')[4]).toBe('""');   // the phone column is empty, not missing
   });
 
   it('marks bookings without a diwan', () => {

@@ -43,7 +43,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
   const monthlyData = useMemo(() => {
     const counts: Record<string, number> = {};
     active.forEach(b => { const key = b.date.slice(0, 7); counts[key] = (counts[key] || 0) + 1; });
-    return Object.keys(counts).sort().map(key => ({ month: monthKey(`${key}-01`), count: counts[key] }));
+    return Object.entries(counts).sort(([a], [b]) => a.localeCompare(b)).map(([key, count]) => ({ month: monthKey(`${key}-01`), count }));
   }, [active]);
 
   // Slot distribution, most popular first
@@ -58,9 +58,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
 
   // Bookings per weekday
   const dayData = useMemo(() => {
-    const counts = Array<number>(7).fill(0);
-    active.forEach(b => { const dow = parseISO(b.date).getDay(); counts[dow] = (counts[dow] ?? 0) + 1; });
-    return DAY_NAMES.map((name, i) => ({ name, count: counts[i] }));
+    return DAY_NAMES.map((name, dow) => ({ name, count: active.filter(b => parseISO(b.date).getDay() === dow).length }));
   }, [active]);
 
   // Fridays and Saturdays still free or booked in the coming months, and the kinds of event held.

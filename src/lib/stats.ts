@@ -50,6 +50,6 @@ export function weekendAvailability(bookings: Booking[], today: Date, months = 6
     const weekend = eachDayOfInterval({ start: first, end: endOfMonth(first) })
       .filter(d => [5, 6].includes(getDay(d)) && !isBefore(d, today));
     const bookedCount = weekend.filter(d => booked.has(format(d, 'yyyy-MM-dd'))).length;
-    return { month: LEVANTINE_MONTHS[first.getMonth()], booked: bookedCount, free: weekend.length - bookedCount };
+    return { month: LEVANTINE_MONTHS[first.getMonth()] ?? '', booked: bookedCount, free: weekend.length - bookedCount };
   });
 }

@@ -14,7 +14,7 @@ runs:
     - run: npm ci
       shell: bash
     # The backend (image downloads) and the browser (system packages) are independent, so they
-    # start together. The backend start is retried because a registry hiccup would otherwise fail
+    # start together. Both are retried because a registry or mirror hiccup would otherwise fail
     # the whole run for no reason in the code.
     - name: Start the backend and install the browser
       shell: bash
@@ -30,8 +30,18 @@ runs:
           done
           return 1
         }
+        # The system packages come from the Ubuntu mirror, which now and then crawls (one run sat on it for
+        # the whole 15 minutes the job is allowed). A normal install takes under a minute, so give each try
+        # 3 minutes and try again: packages already downloaded are kept, so a retry carries on where it was.
+        install_browser() {
+          for attempt in 1 2 3; do
+            timeout 3m npx playwright install --with-deps $BROWSERS && return 0
+            echo "browser install failed or timed out (attempt $attempt)"
+          done
+          return 1
+        }
         start_backend > backend.log 2>&1 &
         backend=$!
-        npx playwright install --with-deps $BROWSERS
+        install_browser
         wait "$backend" || { cat backend.log; exit 1; }
         tail -n 5 backend.log

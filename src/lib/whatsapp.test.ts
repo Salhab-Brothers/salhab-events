@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { whatsappDigits, replyText, replyLink } from './whatsapp';
 import { makeRequest } from '@/test/factories';
+import { formatFullDateStr } from './levantineMonths';
+import { TIME_SLOT_LABELS } from './data';
 
 describe('whatsappDigits', () => {
   it.each([
@@ -27,5 +29,12 @@ describe('replies', () => {
     const link = replyLink(makeRequest({ status: 'approved', phone: '0501234567' }))!;
     expect(link.startsWith('https://wa.me/972501234567?text=')).toBe(true);
     expect(decodeURIComponent(link.split('text=')[1])).toBe(replyText(makeRequest({ status: 'approved', phone: '0501234567' })));
+  });
+});
+
+describe('replyText details', () => {
+  it.each(['approved', 'rejected'] as const)('names the day and the time of day when %s', (status) => {
+    const text = replyText(makeRequest({ status, date: '2026-06-20', time_slot: 'lunch' }));
+    expect(text).toContain(`${formatFullDateStr('2026-06-20')} (${TIME_SLOT_LABELS.lunch})`);
   });
 });

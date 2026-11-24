@@ -35,3 +35,10 @@ describe('levantineMonths', () => {
     expect(formatMonthYearStr('2027-03-09')).toBe('آذار، 3 / 2027');
   });
 });
+
+describe('weekday names', () => {
+  it('names every day of the week in a full date', () => {
+    const names = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    names.forEach((name, i) => expect(formatFullDate(new Date(2026, 5, 21 + i))).toMatch(new RegExp(`^${name}،`)));   // 21 June 2026 is a Sunday
+  });
+});

@@ -99,3 +99,11 @@ describe('useIsAdmin', () => {
     expect(unsubscribe).toHaveBeenCalled();
   });
 });
+
+describe('useIsAdmin before the session is known', () => {
+  it('starts as not an admin and still loading', () => {
+    auth.getSession.mockReturnValue(new Promise(() => {}));
+    const { result } = renderHook(() => useIsAdmin());
+    expect(result.current).toEqual({ isAdmin: false, loading: true });
+  });
+});

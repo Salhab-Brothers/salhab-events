@@ -75,8 +75,6 @@ export function buildIslamicDateMap() {
       if (event.type === 'eid_fitr' || event.type === 'eid_adha') {
         if (i === 0) {
           dayLabel = `${event.label} (الاحتمال الأول)`;
-        } else if (i === 1) {
-          dayLabel = event.label;
         } else if (i === 2) {
           dayLabel = event.type === 'eid_fitr' ? `اليوم الثاني من ${event.emoji} عيد الفطر` : `اليوم الثاني من ${event.emoji} عيد الأضحى`;
         } else if (i === 3) {
@@ -84,10 +82,6 @@ export function buildIslamicDateMap() {
         } else if (i === 4) {
           dayLabel = `اليوم الرابع من عيد الأضحى`;
         }
-      } else if (event.type === 'ramadan_start') {
-        dayLabel = event.label;
-      } else if (event.type === 'arafah') {
-        dayLabel = event.label;
       }
 
       map[dateStr].push({
@@ -110,7 +104,6 @@ export function getIslamicEvents(dateStr: string): IslamicDay[] {
 }
 
 export function getIslamicStyle(events: Pick<IslamicDay, 'type'>[]) {
-  if (!events.length) return null;
   const types = events.map(e => e.type);
   if (types.includes('eid_adha') || types.includes('eid_fitr')) return 'eid';
   if (types.includes('arafah')) return 'arafah';

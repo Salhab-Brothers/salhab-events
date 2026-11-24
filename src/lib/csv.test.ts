@@ -49,6 +49,7 @@ describe('bookingsToCsv', () => {
     expect(row).toContain('"نعم"');
     expect(row).toContain('"pending"');
     expect(row.endsWith('"pending","نعم",""')).toBe(true);
+    expect(row.split(',')[4]).toBe('""');   // the phone column is empty, not missing
   });
 
   it('marks bookings without a diwan', () => {

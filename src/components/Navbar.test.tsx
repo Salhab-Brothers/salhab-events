@@ -87,4 +87,28 @@ describe('Navbar', () => {
     expect(screen.getAllByRole('button', { name: 'المناسبات' }).every((b) => b.getAttribute('aria-current') === 'page')).toBe(true);
     expect(screen.getAllByRole('button', { name: 'التقييمات' }).every((b) => !b.hasAttribute('aria-current'))).toBe(true);
   });
+
+  it('shows the Reviews entry whenever it is allowed', () => {
+    setup({ showReviews: true });
+    expect(screen.getByText('التقييمات')).toBeInTheDocument();
+  });
+
+  it('shows a sun while dark and a moon while light, with the matching label', () => {
+    const { unmount } = setup({ theme: 'dark' });
+    expect(screen.getByLabelText('الوضع الفاتح').querySelector('.lucide-sun')).not.toBeNull();
+    expect(screen.queryByLabelText('الوضع الداكن')).toBeNull();
+    unmount();
+    setup({ theme: 'light' });
+    expect(screen.getByLabelText('الوضع الداكن').querySelector('.lucide-moon')).not.toBeNull();
+    expect(screen.queryByLabelText('الوضع الفاتح')).toBeNull();
+  });
+
+  it('highlights only the open page in the mobile menu', async () => {
+    setup({ activePage: 'events' });
+    await userEvent.click(screen.getByRole('button', { name: 'القائمة' }));
+    const menu = within(screen.getByRole('navigation', { name: 'قائمة الجوال' }));
+    expect(menu.getByText('المناسبات').closest('button')!.className).toContain('bg-primary');
+    expect(menu.getByText('التقويم').closest('button')!.className).not.toContain('bg-primary');
+  });
 });
+

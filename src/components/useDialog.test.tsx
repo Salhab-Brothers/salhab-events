@@ -45,7 +45,9 @@ describe('useDialog', () => {
   it('confirm resolves false when Escape is pressed (the dialog cancel event)', async () => {
     const onResult = setup();
     await userEvent.click(screen.getByText('ask'));
-    fireEvent(screen.getByRole('dialog'), new Event('cancel', { cancelable: true }));
+    const cancel = new Event('cancel', { cancelable: true });
+    fireEvent(screen.getByRole('dialog'), cancel);
+    expect(cancel.defaultPrevented).toBe(true);   // the dialog is closed by our own code, not left to the browser
     await waitFor(() => expect(onResult).toHaveBeenCalledWith(false));
     expect(screen.queryByRole('dialog')).toBeNull();
   });

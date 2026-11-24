@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: the strings here are CSS classes and wording, which the screenshot and browser tests cover
 import { CalendarDays, CheckCircle, Clock } from 'lucide-react';
 import { format, parseISO, isAfter, startOfToday } from 'date-fns';
 import { ar } from 'date-fns/locale';

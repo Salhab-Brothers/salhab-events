@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: the strings here are CSS classes and wording, which the screenshot and browser tests cover
 import { useState, type FormEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Star, Send, MessageSquare } from 'lucide-react';

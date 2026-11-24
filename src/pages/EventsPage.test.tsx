@@ -142,3 +142,71 @@ describe('EventsPage', () => {
     expect(within(list).queryByText(/أيار/)).toBeNull();
   });
 });
+
+describe('EventsPage details', () => {
+  it('counts an event today as upcoming, not past', async () => {
+    render(<EventsPage bookings={[
+      makeBooking({ id: 't', date: '2026-06-15', event_name: 'اليوم' }), makeBooking({ id: 'y', date: '2026-06-14', event_name: 'أمس' }),
+    ]} />);
+    expect(titles()).toEqual(['اليوم']);
+    expect(screen.getByLabelText(/إظهار المناسبات الماضية \(1\)/)).toBeInTheDocument();
+    await userEvent.click(screen.getAllByRole('combobox')[0]);
+    expect(await screen.findByRole('option', { name: /حزيران/ })).toBeInTheDocument();
+  });
+
+  it('puts events in date order whatever order they arrive in, and months in order', async () => {
+    render(<EventsPage bookings={[
+      makeBooking({ id: 'c', date: '2026-08-02', event_name: 'ج' }), makeBooking({ id: 'a', date: '2026-06-20', event_name: 'أ' }),
+      makeBooking({ id: 'b', date: '2026-07-04', event_name: 'ب' }),
+    ]} />);
+    expect(titles()).toEqual(['أ', 'ب', 'ج']);
+    await userEvent.click(screen.getAllByRole('combobox')[0]);
+    const options = (await screen.findAllByRole('option')).map(o => o.textContent);
+    expect(options).toEqual(['كل الأشهر', 'حزيران، 6 / 2026', 'تموز، 7 / 2026', 'آب، 8 / 2026']);
+  });
+
+  it('ignores spaces around a search', async () => {
+    render(<EventsPage bookings={bookings} />);
+    await userEvent.type(screen.getByPlaceholderText(/ابحث/), '   ');
+    expect(titles()).toHaveLength(6);
+    await userEvent.clear(screen.getByPlaceholderText(/ابحث/));
+    await userEvent.type(screen.getByPlaceholderText(/ابحث/), ' سامي ');
+    expect(titles()).toEqual(['زفاف سامي']);
+  });
+
+  it('offers to clear after a month or status filter too, and clear puts everything back', async () => {
+    render(<EventsPage bookings={bookings} />);
+    const [monthSelect, statusSelect] = screen.getAllByRole('combobox');
+    await userEvent.click(monthSelect);
+    await userEvent.click(await screen.findByRole('option', { name: /تموز/ }));
+    await userEvent.click(statusSelect);
+    await userEvent.click(await screen.findByRole('option', { name: 'ملغي' }));
+    await userEvent.click(pill('زفاف'));
+    await userEvent.click(pill('اليوم كاملاً'));
+    await userEvent.click(screen.getByLabelText('الديوان فقط'));
+    await userEvent.click(screen.getByLabelText(/إظهار المناسبات الماضية/));
+    await userEvent.type(screen.getByPlaceholderText(/ابحث/), 'ي');
+    await userEvent.click(screen.getByRole('button', { name: /مسح الفلاتر/ }));
+    expect(titles()).toHaveLength(6);
+    expect(screen.getByPlaceholderText(/ابحث/)).toHaveValue('');
+    expect(screen.getByLabelText('الديوان فقط')).not.toBeChecked();
+    expect(screen.getByLabelText(/إظهار المناسبات الماضية/)).not.toBeChecked();
+    expect(monthSelect).toHaveTextContent('كل الأشهر');
+    expect(statusSelect).toHaveTextContent('كل الحالات');
+    for (const group of ['نوع المناسبة', 'الوقت']) {
+      expect(within(screen.getByRole('group', { name: group })).getByRole('button', { name: 'الكل' })).toHaveAttribute('aria-pressed', 'true');
+    }
+  });
+
+  it('offers to clear after only a month, or only a status, is chosen', async () => {
+    render(<EventsPage bookings={bookings} />);
+    const [monthSelect, statusSelect] = screen.getAllByRole('combobox');
+    await userEvent.click(monthSelect);
+    await userEvent.click(await screen.findByRole('option', { name: /تموز/ }));
+    await userEvent.click(screen.getByRole('button', { name: /مسح الفلاتر/ }));
+    await userEvent.click(statusSelect);
+    await userEvent.click(await screen.findByRole('option', { name: 'معلّق' }));
+    expect(screen.getByRole('button', { name: /مسح الفلاتر/ })).toBeInTheDocument();
+  });
+});
+

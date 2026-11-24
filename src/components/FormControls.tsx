@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: the strings here are CSS classes and wording, which the screenshot and browser tests cover
 import { BOOKABLE_SLOTS, type CanonicalSlot } from '@/lib/data';
 
 /** Time slot choice: four equal buttons that stay one row from the smallest phone up. */

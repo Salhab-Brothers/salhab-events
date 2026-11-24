@@ -67,6 +67,22 @@ describe('after a failed send', () => {
   });
 });
 
+describe('after a failed review', () => {
+  it('asks for a fresh captcha: the old token is dropped and the widget is shown again', async () => {
+    invoke.mockResolvedValue({ error: new Error('down') });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderWithQuery(<ReviewsPage />);
+    await userEvent.type(screen.getByLabelText(/اسمك/), 'سارة');
+    await userEvent.click(document.querySelectorAll('form button[type="button"]')[4]);
+    const widget = screen.getByRole('button', { name: 'solve' });
+    await userEvent.click(widget);
+    await userEvent.click(screen.getByRole('button', { name: /إرسال التقييم/ }));
+    await screen.findByText(/تعذّر إرسال التقييم/);
+    expect(screen.getByRole('button', { name: /إرسال التقييم/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'solve' })).not.toBe(widget);
+  });
+});
+
 describe('captcha on the review form', () => {
   it('blocks sending until solved, then sends through the verifying function', async () => {
     renderWithQuery(<ReviewsPage />);

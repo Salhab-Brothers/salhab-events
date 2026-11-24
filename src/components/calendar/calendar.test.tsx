@@ -105,6 +105,12 @@ describe('DayDetailModal', () => {
     expect(screen.getByText('لا توجد حجوزات في هذا اليوم')).toBeInTheDocument();
   });
 
+  it('lists the bookings, not the empty message, on a holiday that has events', () => {
+    render(<DayDetailModal {...base} islamicEvents={getIslamicEvents('2026-05-26')} bookings={[makeBooking({ id: 'h1', event_name: 'زفاف عرفة' })]} />);
+    expect(screen.getByText('زفاف عرفة')).toBeInTheDocument();
+    expect(screen.queryByText('لا توجد حجوزات في هذا اليوم')).toBeNull();
+  });
+
   it('lists bookings without private fields', () => {
     render(<DayDetailModal {...base} bookings={[
       makeBooking({ id: '1', event_name: 'زفاف س', person_name: 'سامي', time_slot: 'wedding', phone: '0501111111', notes: 'سري' }),
@@ -228,3 +234,120 @@ describe('CalendarGrid', () => {
     expect(screen.getByText('لا توجد حجوزات في هذا اليوم')).toBeInTheDocument();
   });
 });
+
+describe('CalendarGrid details', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 5, 15));   // Monday 15 June 2026
+  });
+  afterEach(() => vi.useRealTimers());
+
+  const at = (monthLabel: RegExp, n: string) =>
+    within(screen.getByText(monthLabel).parentElement!).getByText(n).closest('button')!;
+  const june = (n: string) => at(/حزيران، 6/, n);
+  const looks = (el: HTMLElement) => ['emerald-50', 'amber-100', 'violet-100', 'orange-100', 'red-100'].filter(c => el.className.includes(`bg-${c}`));
+
+  const week = [
+    makeBooking({ id: '1', date: '2026-06-20', time_slot: 'wedding' }),
+    makeBooking({ id: '2', date: '2026-06-22', time_slot: 'lunch' }), makeBooking({ id: '3', date: '2026-06-22', time_slot: 'wedding' }),
+    makeBooking({ id: '4', date: '2026-06-23', time_slot: 'morning' }),
+    makeBooking({ id: '5', date: '2026-06-24', time_slot: 'lunch' }), makeBooking({ id: '6', date: '2026-06-24', time_slot: 'afternoon' }),
+    makeBooking({ id: '7', date: '2026-06-24', time_slot: 'evening' }),
+    makeBooking({ id: '8', date: '2026-06-25', time_slot: 'full' }),
+    makeBooking({ id: '9', date: '2026-06-29', time_slot: 'lunch' }), makeBooking({ id: '10', date: '2026-06-29', time_slot: 'afternoon' }),
+    makeBooking({ id: '11', date: '2026-06-30', time_slot: 'full', status: 'cancelled' }),
+  ];
+
+  it('colours each day by what is booked on it', () => {
+    render(<CalendarGrid bookings={week} />);
+    expect(looks(june('18'))).toEqual(['emerald-50']);     // nothing booked
+    expect(looks(june('20'))).toEqual(['violet-100']);     // evening only
+    expect(looks(june('22'))).toEqual(['orange-100']);     // lunch and evening
+    expect(looks(june('23'))).toEqual(['amber-100']);      // lunch (old name) only
+    expect(looks(june('24'))).toEqual(['red-100']);        // all three slots count as full
+    expect(looks(june('25'))).toEqual(['red-100']);        // whole day
+    expect(looks(june('29'))).toEqual(['amber-100']);      // lunch and afternoon
+    expect(looks(june('30'))).toEqual(['emerald-50']);     // cancelled does not count
+  });
+
+  it('shows the booking dot and the conflict warning only on days ahead', () => {
+    render(<CalendarGrid bookings={[
+      ...week,
+      makeBooking({ id: 'p1', date: '2026-06-03', time_slot: 'lunch' }), makeBooking({ id: 'p2', date: '2026-06-03', time_slot: 'lunch' }),
+    ]} />);
+    expect(june('20').querySelector('.rounded-full')).not.toBeNull();
+    expect(june('18').querySelector('.rounded-full')).toBeNull();
+    expect(june('3').querySelector('.rounded-full')).toBeNull();
+    expect(within(june('3')).queryByTitle('تعارض في الحجز')).toBeNull();
+    expect(looks(june('3'))).toEqual(['emerald-50']);
+  });
+
+  it('lets today be opened, but not yesterday', async () => {
+    render(<CalendarGrid bookings={[]} />);
+    await userEvent.click(june('14'));
+    expect(screen.queryByText('إغلاق')).toBeNull();
+    await userEvent.click(june('15'));
+    expect(screen.getByText('إغلاق')).toBeInTheDocument();
+  });
+
+  it('rings free Fridays and Saturdays only', () => {
+    render(<CalendarGrid bookings={[]} />);
+    for (const n of ['19', '20', '26']) expect(june(n).className).toContain('ring-primary/20');
+    for (const n of ['17', '18', '21', '22']) expect(june(n).className).not.toContain('ring-primary/20');
+  });
+
+  it('starts each month in the right column, with the week starting on Saturday', () => {
+    render(<CalendarGrid bookings={[]} />);
+    const grid = june('1').parentElement!;
+    expect([...grid.children].indexOf(june('1'))).toBe(2);   // 1 June 2026 is a Monday: Saturday and Sunday come first
+    expect(june('1').parentElement).toBe(june('30').parentElement);
+  });
+
+  it('heads the columns Saturday to Friday and highlights the weekend', () => {
+    render(<CalendarGrid bookings={[]} />);
+    const heads = [...june('1').parentElement!.previousElementSibling!.children] as HTMLElement[];
+    expect(heads.map(h => h.querySelector('.sr-only')!.textContent)).toEqual(['السبت', 'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة']);
+    expect(heads.map(h => h.className.includes('text-primary'))).toEqual([true, false, false, false, false, false, true]);
+  });
+
+  it('lists months in order, from this month on, and skips months that only have cancelled events', () => {
+    render(<CalendarGrid bookings={[
+      makeBooking({ id: 'a', date: '2026-10-05' }), makeBooking({ id: 'b', date: '2026-08-10' }),
+      makeBooking({ id: 'c', date: '2026-09-09', status: 'cancelled' }), makeBooking({ id: 'd', date: '2026-04-09' }),
+    ]} />);
+    const months = screen.getAllByRole('heading', { level: 3 }).map(h => h.textContent);
+    expect(months).toEqual(['حزيران، 6 / 2026', 'آب، 8 / 2026', 'تشرين الأول، 10 / 2026']);
+  });
+
+  it('follows the bookings when they change', () => {
+    const { rerender } = render(<CalendarGrid bookings={[]} />);
+    expect(looks(june('20'))).toEqual(['emerald-50']);
+    rerender(<CalendarGrid bookings={[makeBooking({ id: 'n', date: '2026-06-20', time_slot: 'full' }), makeBooking({ id: 'm', date: '2026-11-02' })]} />);
+    expect(looks(june('20'))).toEqual(['red-100']);
+    expect(screen.getByText(/تشرين الثاني، 11/)).toBeInTheDocument();
+  });
+
+  it('flags a day where one slot is double booked even if another slot is booked once', () => {
+    render(<CalendarGrid bookings={[
+      makeBooking({ id: 'x1', date: '2026-06-24', time_slot: 'lunch' }), makeBooking({ id: 'x2', date: '2026-06-24', time_slot: 'lunch' }),
+      makeBooking({ id: 'x3', date: '2026-06-24', time_slot: 'wedding' }),
+    ]} />);
+    expect(within(june('24')).getByTitle('تعارض في الحجز')).toBeInTheDocument();
+  });
+
+  it('explains the colours and the holiday rings in the legend', () => {
+    const { container } = render(<CalendarGrid bookings={[]} />);
+    const legend = container.firstElementChild!.firstElementChild!.firstElementChild!;
+    expect(legend.querySelectorAll('span.w-4')).toHaveLength(8);   // five colours and three holiday rings, each with its swatch
+    for (const label of ['حر', 'ظهراً / عصراً', 'ظهراً + مساءً', 'مساءً', 'اليوم كاملاً', 'رمضان (تقريبي)', 'عيد الفطر / الأضحى', 'يوم عرفة']) {
+      expect(legend.textContent).toContain(label);
+    }
+  });
+
+  it('writes the weekday names out in full for screen readers and short above the cells', () => {
+    render(<CalendarGrid bookings={[]} />);
+    const heads = [...june('1').parentElement!.previousElementSibling!.children];
+    expect(heads.map(h => h.querySelector('[aria-hidden="true"]')!.textContent)).toEqual(['سبت', 'أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة']);
+  });
+});
+

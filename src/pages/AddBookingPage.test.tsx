@@ -64,7 +64,11 @@ describe('AddBookingPage: new booking', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     await submit();
     await waitFor(() => expect(Booking.create).toHaveBeenCalled());
-    await act(async () => { vi.advanceTimersByTime(3500); });
+    expect(await screen.findByText('تم إضافة الحجز بنجاح!')).toBeInTheDocument();
+    await act(async () => { vi.advanceTimersByTime(2900); });
+    expect(screen.getByText('تم إضافة الحجز بنجاح!')).toBeInTheDocument();
+    await act(async () => { vi.advanceTimersByTime(200); });
+    expect(screen.queryByText('تم إضافة الحجز بنجاح!')).toBeNull();
   });
 
   it('shows the Islamic date warning', () => {
@@ -220,3 +224,65 @@ describe('AddBookingPage: editing', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 });
+
+describe('AddBookingPage: details', () => {
+  it('starts without a banner, an error or a phone warning', () => {
+    const { container } = setup();
+    expect(screen.queryByText(/بنجاح/)).toBeNull();
+    expect(container.querySelector('.text-destructive')).toBeNull();
+    expect(screen.getByLabelText(/رقم الهاتف/)).not.toHaveAttribute('aria-describedby');
+    expect(screen.getByRole('button', { name: 'إضافة الحجز' })).toBeEnabled();
+  });
+
+  it('shows progress and disables the button while saving, then frees it', async () => {
+    let finish!: () => void;
+    Booking.create.mockReturnValue(new Promise<void>(r => { finish = r; }));
+    const { container } = setup();
+    await fill(container);
+    await submit();
+    expect(screen.getByRole('button', { name: 'جارٍ الحفظ...' })).toBeDisabled();
+    finish();
+    await screen.findByText('تم إضافة الحجز بنجاح!');
+    expect(screen.getByRole('button', { name: 'إضافة الحجز' })).toBeEnabled();
+  });
+
+  it('logs a failed save, frees the button, and drops the old error when saving again', async () => {
+    Booking.create.mockRejectedValueOnce(new Error('x'));
+    const { container } = setup();
+    await fill(container);
+    await submit();
+    await screen.findByText('تعذّر حفظ الحجز. حاول مرة أخرى.');
+    expect(console.error).toHaveBeenCalledWith('Save booking failed', expect.any(Error));
+    expect(screen.getByRole('button', { name: 'إضافة الحجز' })).toBeEnabled();
+    await submit();
+    await screen.findByText('تم إضافة الحجز بنجاح!');
+    expect(screen.queryByText('تعذّر حفظ الحجز. حاول مرة أخرى.')).toBeNull();
+  });
+
+  it('closes the clash warning after a failed override', async () => {
+    Booking.create.mockRejectedValueOnce(new Error('x'));
+    const { container } = setup({ bookings: [makeBooking({ id: 'x', date: FUTURE, time_slot: 'lunch' })] });
+    await fill(container);
+    await submit();
+    await userEvent.click(await screen.findByText('تجاهل والحفظ'));
+    await screen.findByText('تعذّر حفظ الحجز. حاول مرة أخرى.');
+    expect(screen.queryByText('⚠️ تعارض في الحجز')).toBeNull();
+  });
+
+  it('says an edit was saved, and keeps saying so (no timer, no reset)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const editing = makeBooking({ id: 'e1', event_name: 'قديم', date: FUTURE });
+    setup({ editingBooking: editing, bookings: [editing] });
+    await submit();
+    expect(await screen.findByText('تم تعديل الحجز بنجاح!')).toBeInTheDocument();
+    await act(async () => { vi.advanceTimersByTime(5000); });
+    expect(screen.getByText('تم تعديل الحجز بنجاح!')).toBeInTheDocument();
+    expect(screen.getByLabelText(/اسم المناسبة/)).toHaveValue('قديم');
+  });
+
+  it('stops the browser from submitting the form itself', () => {
+    const { container } = setup();
+    expect(fireEvent.submit(container.querySelector('form')!)).toBe(false);
+  });
+});
+

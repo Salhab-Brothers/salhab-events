@@ -2,24 +2,18 @@
 import { useMemo, type ReactNode } from 'react';
 import { parseISO, isAfter, startOfToday } from 'date-fns';
 import { LEVANTINE_MONTHS } from '@/lib/levantineMonths';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, PieChart } from '@/components/charts';
 import { CalendarDays, TrendingUp, Clock, CheckCircle, CalendarCheck, Flame } from 'lucide-react';
 import { normalizeSlot, type CanonicalSlot } from '@/lib/data';
 import { busiestMonth, eventTypeCounts, shortMonth, weekendAvailability } from '@/lib/stats';
 import type { Booking } from '@/types';
 
-const CAIRO = "'Cairo Variable', sans-serif";
-// Stryker disable next-line ObjectLiteral: chart look
-const TICK = { fontSize: 13, fontFamily: CAIRO };
+const PRIMARY = 'hsl(var(--primary))';
+const FREE = 'hsl(var(--muted-foreground) / 0.3)';
+const DIM = 'hsl(var(--muted-foreground) / 0.4)';
 const SLOT_COLORS: Record<CanonicalSlot, string> = { lunch: '#f59e0b', afternoon: '#3b82f6', wedding: '#7c3aed', full: '#ef4444' };
 const SLOT_LABELS: Record<CanonicalSlot, string> = { lunch: 'غداء ظهراً', afternoon: 'خطبة / طلبة عصراً', wedding: 'حفل زفاف مساءاً', full: 'اليوم كاملاً' };
 const DAY_NAMES = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-
-// People who asked their device for less motion get charts that appear at once instead of growing in.
-// Stryker disable ArrowFunction,BooleanLiteral,ConditionalExpression,EqualityOperator,LogicalOperator: whether the charts animate is not visible in tests
-const animateCharts = () =>
-  typeof window.matchMedia !== 'function' || !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-// Stryker restore ArrowFunction,BooleanLiteral,ConditionalExpression,EqualityOperator,LogicalOperator
 
 const monthKey = (date: string) => {
   const d = parseISO(date);
@@ -28,8 +22,6 @@ const monthKey = (date: string) => {
 
 /**
  * Charts are visual only, so screen readers skip them and read `summary` as a list instead.
- * Each chart also sets `accessibilityLayer={false}`: recharts 3 otherwise adds a keyboard stop
- * (svg tabindex=0), and the pie adds another (rootTabIndex), inside this hidden wrapper.
  */
 function ChartFrame({ summary, children }: { summary: string[]; children: ReactNode }) {
   return (
@@ -42,7 +34,6 @@ function ChartFrame({ summary, children }: { summary: string[]; children: ReactN
 
 export default function StatsPage({ bookings }: { bookings: Booking[] }) {
   const active = useMemo(() => bookings.filter(b => b.status !== 'cancelled'), [bookings]);
-  const animate = animateCharts();
   const today = startOfToday();
 
   const upcoming = active.filter(b => isAfter(parseISO(b.date), today)).length;
@@ -52,7 +43,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
   const monthlyData = useMemo(() => {
     const counts: Record<string, number> = {};
     active.forEach(b => { const key = b.date.slice(0, 7); counts[key] = (counts[key] || 0) + 1; });
-    return Object.keys(counts).sort().map(key => ({ month: monthKey(`${key}-01`), count: counts[key] }));
+    return Object.entries(counts).sort(([a], [b]) => a.localeCompare(b)).map(([key, count]) => ({ month: monthKey(`${key}-01`), count }));
   }, [active]);
 
   // Slot distribution, most popular first
@@ -67,9 +58,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
 
   // Bookings per weekday
   const dayData = useMemo(() => {
-    const counts = Array<number>(7).fill(0);
-    active.forEach(b => { const dow = parseISO(b.date).getDay(); counts[dow] = (counts[dow] ?? 0) + 1; });
-    return DAY_NAMES.map((name, i) => ({ name, count: counts[i] }));
+    return DAY_NAMES.map((name, dow) => ({ name, count: active.filter(b => parseISO(b.date).getDay() === dow).length }));
   }, [active]);
 
   // Fridays and Saturdays still free or booked in the coming months, and the kinds of event held.
@@ -118,17 +107,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
             <p className="text-sm font-body text-muted-foreground text-center py-10">لا توجد بيانات</p>
           ) : (
             <ChartFrame summary={monthlyData.map(d => `${d.month}: ${d.count}`)}>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart accessibilityLayer={false} data={monthlyData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                <XAxis dataKey="month" tick={TICK} />
-                <YAxis width={28} axisLine={false} tickLine={false} tick={TICK} allowDecimals={false} />
-                <Tooltip
-                  formatter={(v) => [v, 'حجز']}
-                  contentStyle={{ fontFamily: CAIRO, fontSize: 14, direction: 'rtl' }}
-                />
-                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} isAnimationActive={animate} />
-              </BarChart>
-            </ResponsiveContainer>
+            <BarChart data={monthlyData.map(d => ({ label: d.month, segments: [{ value: d.count, color: PRIMARY, title: `${d.count} حجز` }] }))} />
             </ChartFrame>
           )}
         </div>
@@ -141,29 +120,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
           ) : (
             <>
               <ChartFrame summary={[]}>
-              <ResponsiveContainer width="100%" height={180}>
-                <PieChart accessibilityLayer={false}>
-                  <Pie
-                    data={slotData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={75}
-                    rootTabIndex={-1}
-                    isAnimationActive={animate}
-                    label={false}
-                    labelLine={false}
-                  >
-                    {slotData.map((entry, i) => (
-                      <Cell key={i} fill={SLOT_COLORS[entry.slot]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ fontFamily: CAIRO, fontSize: 14, direction: 'rtl' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              <PieChart slices={slotData.map(s => ({ value: s.value, color: SLOT_COLORS[s.slot], title: `${s.name}: ${s.value}` }))} />
               </ChartFrame>
               {/* External legend */}
               <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 mt-3">
@@ -188,15 +145,10 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
           <h2 className="font-heading font-bold text-base text-foreground mb-1">الجمعات والسبوت القادمة</h2>
           <p className="text-sm font-body text-muted-foreground mb-4">كم منها محجوز وكم ما زال متاحاً، شهراً بشهر</p>
           <ChartFrame summary={weekendData.map(d => `${d.month}: ${d.booked} محجوز، ${d.free} متاح`)}>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart accessibilityLayer={false} data={weekendData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-              <XAxis dataKey="month" interval={0} tickFormatter={shortMonth} tick={TICK} />
-              <YAxis width={28} axisLine={false} tickLine={false} tick={TICK} allowDecimals={false} />
-              <Tooltip formatter={(v, name) => [v, name === 'booked' ? 'محجوز' : 'متاح']} contentStyle={{ fontFamily: CAIRO, fontSize: 14, direction: 'rtl' }} />
-              <Bar dataKey="booked" stackId="weekend" fill="hsl(var(--primary))" isAnimationActive={animate} />
-              <Bar dataKey="free" stackId="weekend" fill="hsl(var(--muted-foreground) / 0.3)" radius={[4, 4, 0, 0]} isAnimationActive={animate} />
-            </BarChart>
-          </ResponsiveContainer>
+          <BarChart allLabels format={shortMonth} data={weekendData.map(d => ({ label: d.month, segments: [
+              { value: d.booked, color: PRIMARY, title: `${d.booked} محجوز` },
+              { value: d.free, color: FREE, title: `${d.free} متاح` },
+            ] }))} />
           </ChartFrame>
           <div className="flex justify-center gap-5 mt-3 font-body text-sm text-foreground">
             <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-primary" />محجوز</span>
@@ -211,14 +163,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
             <p className="text-sm font-body text-muted-foreground text-center py-10">لا توجد بيانات</p>
           ) : (
             <ChartFrame summary={typeData.map(d => `${d.type}: ${d.count}`)}>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart accessibilityLayer={false} data={typeData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                <XAxis dataKey="type" tick={TICK} />
-                <YAxis width={28} axisLine={false} tickLine={false} tick={TICK} allowDecimals={false} />
-                <Tooltip formatter={(v) => [v, 'مناسبة']} contentStyle={{ fontFamily: CAIRO, fontSize: 14, direction: 'rtl' }} />
-                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} isAnimationActive={animate} />
-              </BarChart>
-            </ResponsiveContainer>
+            <BarChart data={typeData.map(d => ({ label: d.type, segments: [{ value: d.count, color: PRIMARY, title: `${d.count} مناسبة` }] }))} />
             </ChartFrame>
           )}
         </div>
@@ -230,18 +175,9 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
             <p className="text-sm font-body text-muted-foreground text-center py-10">لا توجد بيانات</p>
           ) : (
             <ChartFrame summary={dayData.map(d => `${d.name}: ${d.count}`)}>
-            <ResponsiveContainer width="100%" height={160}>
-              <BarChart accessibilityLayer={false} data={dayData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                <XAxis dataKey="name" interval={0} tick={{ ...TICK, fontSize: 12 }} />
-                <YAxis width={28} axisLine={false} tickLine={false} tick={TICK} allowDecimals={false} />
-                <Tooltip formatter={(v) => [v, 'حجز']} contentStyle={{ fontFamily: CAIRO, fontSize: 14, direction: 'rtl' }} />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]} isAnimationActive={animate}>
-                  {dayData.map((_, i) => (
-                    <Cell key={i} fill={i === 5 || i === 6 ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground) / 0.4)'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <BarChart height={160} labelSize={12} allLabels data={dayData.map((d, i) => ({ label: d.name, segments: [
+              { value: d.count, color: i === 5 || i === 6 ? PRIMARY : DIM, title: `${d.count} حجز` },
+            ] }))} />
             </ChartFrame>
           )}
         </div>

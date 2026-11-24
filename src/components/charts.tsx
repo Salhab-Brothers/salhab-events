@@ -27,6 +27,12 @@ function useWidth() {
   return [ref, width || 320] as const;   // 0 before the first layout (and in tests)
 }
 
+/** The label under a bar: centred on it, but pulled in so that it is not cut off at the right edge of the chart. */
+function BarLabel({ text, centre, right, y }: { text: string; centre: number; right: number; y: number }) {
+  const spills = centre + text.length * 0.3 * 13 > right;   // about half the width of the text, at the label size
+  return <text x={spills ? right : centre} y={y} textAnchor={spills ? 'end' : 'middle'} fill={MUTED}>{text}</text>;
+}
+
 /** A bar with rounded top corners, as a path. */
 const roundedTop = (x: number, y: number, w: number, h: number, r: number) => {
   const c = Math.min(r, h, w / 2);
@@ -80,9 +86,7 @@ export function BarChart({ data, height = 200, labelSize = 13, allLabels = false
                   </path>
                 );
               })}
-              {i % every === 0 && (
-                <text x={x + barW / 2} y={height - 7} textAnchor="middle" fill={MUTED}>{format(d.label)}</text>
-              )}
+              {i % every === 0 && <BarLabel text={format(d.label)} centre={x + barW / 2} right={width} y={height - 7} />}
             </g>
           );
         })}

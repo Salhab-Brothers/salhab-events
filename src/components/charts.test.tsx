@@ -58,6 +58,15 @@ describe('BarChart', () => {
     expect(all.container.querySelectorAll('svg > g text')).toHaveLength(12);
   });
 
+  it('pulls the last label in from the right edge when it would be cut off', () => {
+    const { container } = render(<BarChart data={[one('أ', 1), one('ب', 1), one('ج', 1), one('د', 1), one('هـ', 1), one('كانون الأول 2027', 1)]} allLabels />);
+    const texts = [...container.querySelectorAll('svg > g text')];
+    const [first, last] = [texts[0], texts[5]];
+    expect(first!.getAttribute('text-anchor')).toBe('middle');
+    expect(last!.getAttribute('text-anchor')).toBe('end');
+    expect(Number(last!.getAttribute('x'))).toBe(320);   // the right edge of a chart that is 320 wide
+  });
+
   it('draws an empty chart for no data and for all zeros', () => {
     expect(bars(render(<BarChart data={[]} />).container)).toHaveLength(0);
     const zeros = render(<BarChart data={[one('a', 0)]} />);

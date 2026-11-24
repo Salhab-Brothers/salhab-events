@@ -68,7 +68,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
   // Bookings per weekday
   const dayData = useMemo(() => {
     const counts = Array<number>(7).fill(0);
-    active.forEach(b => { counts[parseISO(b.date).getDay()]++; });
+    active.forEach(b => { const dow = parseISO(b.date).getDay(); counts[dow] = (counts[dow] ?? 0) + 1; });
     return DAY_NAMES.map((name, i) => ({ name, count: counts[i] }));
   }, [active]);
 
@@ -82,7 +82,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
     { icon: CalendarDays, label: 'إجمالي الحجوزات', value: active.length, color: 'text-primary', bg: 'bg-primary/10' },
     { icon: TrendingUp, label: 'المناسبات القادمة', value: upcoming, color: 'text-amber-700 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/30' },
     { icon: CheckCircle, label: 'المناسبات المنتهية', value: past, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
-    { icon: Clock, label: 'الوقت الأكثر حجزاً', value: slotData.length ? slotData[0].name : '-', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30' },
+    { icon: Clock, label: 'الوقت الأكثر حجزاً', value: slotData[0]?.name ?? '-', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30' },
     { icon: CalendarCheck, label: 'جمعات وسبوت متاحة خلال 3 أشهر', value: freeWeekendDays, color: 'text-teal-700 dark:text-teal-400', bg: 'bg-teal-50 dark:bg-teal-950/30' },
     { icon: Flame, label: 'أكثر شهر ازدحاماً', value: busiest ? busiest.month : '-', color: 'text-rose-700 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-950/30' },
   ];

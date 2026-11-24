@@ -42,7 +42,7 @@ describe('EventsPage', () => {
   });
 
   it('hides the past toggle when there are no past events', () => {
-    render(<EventsPage bookings={[bookings[0]]} />);
+    render(<EventsPage bookings={[bookings[0]!]} />);
     expect(screen.queryByText(/إظهار المناسبات الماضية/)).toBeNull();
   });
 
@@ -102,7 +102,7 @@ describe('EventsPage', () => {
 
   it('filters by month and status through the selects', async () => {
     render(<EventsPage bookings={bookings} />);
-    const [monthSelect, statusSelect] = screen.getAllByRole('combobox');
+    const [monthSelect, statusSelect] = screen.getAllByRole('combobox') as [HTMLElement, HTMLElement];
     await userEvent.click(monthSelect);
     await userEvent.click(await screen.findByRole('option', { name: /تموز/ }));
     expect(titles()).toEqual(['طلبة نور', 'غداء عائلي', 'تجمع', 'حفل قديم الاسم']);
@@ -137,7 +137,7 @@ describe('EventsPage', () => {
 
   it('does not offer a month that only has past events', async () => {
     render(<EventsPage bookings={bookings} />);
-    await userEvent.click(screen.getAllByRole('combobox')[0]);
+    await userEvent.click(screen.getAllByRole('combobox')[0]!);
     const list = await screen.findByRole('listbox');
     expect(within(list).queryByText(/أيار/)).toBeNull();
   });
@@ -150,7 +150,7 @@ describe('EventsPage details', () => {
     ]} />);
     expect(titles()).toEqual(['اليوم']);
     expect(screen.getByLabelText(/إظهار المناسبات الماضية \(1\)/)).toBeInTheDocument();
-    await userEvent.click(screen.getAllByRole('combobox')[0]);
+    await userEvent.click(screen.getAllByRole('combobox')[0]!);
     expect(await screen.findByRole('option', { name: /حزيران/ })).toBeInTheDocument();
   });
 
@@ -160,7 +160,7 @@ describe('EventsPage details', () => {
       makeBooking({ id: 'b', date: '2026-07-04', event_name: 'ب' }),
     ]} />);
     expect(titles()).toEqual(['أ', 'ب', 'ج']);
-    await userEvent.click(screen.getAllByRole('combobox')[0]);
+    await userEvent.click(screen.getAllByRole('combobox')[0]!);
     const options = (await screen.findAllByRole('option')).map(o => o.textContent);
     expect(options).toEqual(['كل الأشهر', 'حزيران، 6 / 2026', 'تموز، 7 / 2026', 'آب، 8 / 2026']);
   });
@@ -176,7 +176,7 @@ describe('EventsPage details', () => {
 
   it('offers to clear after a month or status filter too, and clear puts everything back', async () => {
     render(<EventsPage bookings={bookings} />);
-    const [monthSelect, statusSelect] = screen.getAllByRole('combobox');
+    const [monthSelect, statusSelect] = screen.getAllByRole('combobox') as [HTMLElement, HTMLElement];
     await userEvent.click(monthSelect);
     await userEvent.click(await screen.findByRole('option', { name: /تموز/ }));
     await userEvent.click(statusSelect);
@@ -200,7 +200,7 @@ describe('EventsPage details', () => {
 
   it('offers to clear after only a month, or only a status, is chosen', async () => {
     render(<EventsPage bookings={bookings} />);
-    const [monthSelect, statusSelect] = screen.getAllByRole('combobox');
+    const [monthSelect, statusSelect] = screen.getAllByRole('combobox') as [HTMLElement, HTMLElement];
     await userEvent.click(monthSelect);
     await userEvent.click(await screen.findByRole('option', { name: /تموز/ }));
     await userEvent.click(screen.getByRole('button', { name: /مسح الفلاتر/ }));

@@ -19,7 +19,7 @@ beforeEach(() => {
 // The rating widget is five buttons holding stars; the form's is the one with size-28 stars.
 const rate = async (n: number) => {
   const stars = document.querySelectorAll('form button[type="button"]');
-  await userEvent.click(stars[n - 1]);
+  await userEvent.click(stars[n - 1]!);
 };
 
 describe('ReviewsPage', () => {
@@ -127,8 +127,8 @@ describe('ReviewsPage details', () => {
     Review.list.mockResolvedValue([makeReview({ id: '1', rating: 3 })]);
     renderWithQuery(<ReviewsPage />);
     await screen.findByText('سارة');
-    expect(filled(screen.getAllByRole('img', { name: '3 / 5' })[0])).toBe(3);
-    expect(screen.getAllByRole('img', { name: '3 / 5' })[0].children).toHaveLength(5);
+    expect(filled(screen.getAllByRole('img', { name: '3 / 5' })[0]!)).toBe(3);
+    expect(screen.getAllByRole('img', { name: '3 / 5' })[0]!.children).toHaveLength(5);
     await rate(2);
     expect(filled(screen.getByRole('group', { name: /التقييم/ }))).toBe(2);
     await rate(5);

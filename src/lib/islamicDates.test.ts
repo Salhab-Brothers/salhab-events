@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { addDays, parseISO } from 'date-fns';
 import {
   ISLAMIC_EVENTS, computeIslamicEvents, buildIslamicDateMap, getIslamicEvents, getIslamicStyle,
 } from './islamicDates';
@@ -16,13 +17,13 @@ describe('islamicDates', () => {
 
   it('marks Arafah', () => {
     const [e] = getIslamicEvents('2026-05-26');
-    expect(e.type).toBe('arafah');
-    expect(e.label).toBe('يوم عرفة');
+    expect(e?.type).toBe('arafah');
+    expect(e?.label).toBe('يوم عرفة');
   });
 
   it('spans Eid al-Fitr across 4 days with distinct labels', () => {
     const labels = ['2026-03-19', '2026-03-20', '2026-03-21', '2026-03-22']
-      .map((d) => getIslamicEvents(d)[0].label);
+      .map((d) => getIslamicEvents(d)[0]!.label);
     expect(labels[0]).toContain('الاحتمال الأول');
     expect(labels[1]).toBe('عيد الفطر المبارك');
     expect(labels[2]).toContain('اليوم الثاني');
@@ -33,10 +34,10 @@ describe('islamicDates', () => {
   it('spans Eid al-Adha across 5 days overlapping Arafah', () => {
     const first = getIslamicEvents('2026-05-27');
     expect(first.map((e) => e.type).sort()).toEqual(['eid_adha']);
-    expect(getIslamicEvents('2026-05-28')[0].label).toBe('عيد الأضحى المبارك');
-    expect(getIslamicEvents('2026-05-29')[0].label).toContain('اليوم الثاني من');
-    expect(getIslamicEvents('2026-05-30')[0].label).toContain('اليوم الثالث');
-    expect(getIslamicEvents('2026-05-31')[0].label).toBe('اليوم الرابع من عيد الأضحى');
+    expect(getIslamicEvents('2026-05-28')[0]!.label).toBe('عيد الأضحى المبارك');
+    expect(getIslamicEvents('2026-05-29')[0]!.label).toContain('اليوم الثاني من');
+    expect(getIslamicEvents('2026-05-30')[0]!.label).toContain('اليوم الثالث');
+    expect(getIslamicEvents('2026-05-31')[0]!.label).toBe('اليوم الرابع من عيد الأضحى');
   });
 
   it('crosses month boundaries when building ranges', () => {
@@ -81,8 +82,8 @@ describe('day-by-day wording', () => {
   /** The label shown on each day of the first event of this type. */
   const labels = (type: 'eid_fitr' | 'eid_adha') => {
     const { date, days } = first(type);
-    const [y, m, d] = date.split('-').map(Number);
-    return Array.from({ length: days }, (_, i) => getIslamicEvents(key(new Date(y, m - 1, d + i))).find(e => e.type === type)?.label);
+    const start = parseISO(date);
+    return Array.from({ length: days }, (_, i) => getIslamicEvents(key(addDays(start, i))).find(e => e.type === type)?.label);
   };
 
   it('words every day of Eid al-Fitr', () => {

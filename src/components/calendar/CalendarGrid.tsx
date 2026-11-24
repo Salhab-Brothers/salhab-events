@@ -19,10 +19,6 @@ const WEEKDAYS = [
   { full: 'الجمعة', short: 'جمعة' },
 ];
 
-// Map JS getDay() (0=Sun..6=Sat) to column index when week starts Saturday
-// Sat=6 → col 0, Sun=0 → col 1, Mon=1 → col 2, Tue=2 → col 3, Wed=3 → col 4, Thu=4 → col 5, Fri=5 → col 6
-const DAY_TO_COL: Record<number, number> = { 6: 0, 0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6 };
-
 // Weekend highlight: Fri (5) and Sat (6)
 const IS_WEEKEND_DOW = (dow: number) => dow === 5 || dow === 6;
 
@@ -35,8 +31,7 @@ export default function CalendarGrid({ bookings }: { bookings: Booking[] }) {
     const map: Record<string, Booking[]> = {};
     bookings.forEach(b => {
       if (b.status === 'cancelled') return;
-      if (!map[b.date]) map[b.date] = [];
-      map[b.date].push(b);
+      (map[b.date] ??= []).push(b);
     });
     return map;
   }, [bookings]);
@@ -137,7 +132,7 @@ export default function CalendarGrid({ bookings }: { bookings: Booking[] }) {
       <div className="grid grid-cols-1 gap-x-8 gap-y-8 md:grid-cols-2 xl:grid-cols-3">
         {monthsWithEvents.map(month => {
           const days = eachDayOfInterval({ start: startOfMonth(month), end: endOfMonth(month) });
-          const firstCol = DAY_TO_COL[getDay(days[0])];
+          const firstCol = (getDay(startOfMonth(month)) + 1) % 7;   // the week starts on Saturday, which is getDay 6
           const emptyCells = Array.from({ length: firstCol });
 
           return (

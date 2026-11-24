@@ -40,7 +40,7 @@ vi.mock('./AdminPage', () => ({
 
 import Home from './Home';
 
-const nav = (label: string) => screen.getAllByText(label)[0];
+const nav = (label: string) => screen.getAllByText(label)[0]!;
 
 beforeEach(() => {
   vi.clearAllMocks();

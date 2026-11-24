@@ -109,7 +109,7 @@ describe('captcha', () => {
   });
   it('sends the secret, token and client address to Cloudflare', async () => {
     await handler()(post({ kind: 'review', row: review, token: 'tok' }, { 'cf-connecting-ip': '203.0.113.7' }));
-    const [url, init] = fetchMock.mock.calls[0];
+    const [url, init] = fetchMock.mock.calls[0]!;
     expect(url).toBe('https://challenges.cloudflare.com/turnstile/v0/siteverify');
     const body = init.body as URLSearchParams;
     expect(body.get('secret')).toBe('secret');
@@ -119,7 +119,7 @@ describe('captcha', () => {
   it('omits the client address when there is none, and tolerates a missing secret', async () => {
     delete env.TURNSTILE_SECRET;
     await handler()(post({ kind: 'review', row: review, token: 'tok' }));
-    const body = fetchMock.mock.calls[0][1].body as URLSearchParams;
+    const body = fetchMock.mock.calls[0]![1]!.body as URLSearchParams;
     expect(body.has('remoteip')).toBe(false);
     expect(body.get('secret')).toBe('');
   });
@@ -228,7 +228,7 @@ describe('answers in detail', () => {
   });
   it('posts the token to Cloudflare', async () => {
     await handler()(post({ kind: 'review', row: review, token: 't' }));
-    expect(fetchMock.mock.calls[0][1].method).toBe('POST');
+    expect(fetchMock.mock.calls[0]![1]!.method).toBe('POST');
   });
   it('accepts a token of exactly the longest allowed length', async () => {
     expect((await handler()(post({ kind: 'review', row: review, token: 'x'.repeat(2048) }))).status).toBe(200);

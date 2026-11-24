@@ -123,8 +123,8 @@ describe('ConflictDialog dates', () => {
       makeBooking({ id: 'b2', event_name: 'غداء ب', date: '', time_slot: 'lunch' }),
     ]} onOverride={vi.fn()} onCancel={vi.fn()} />);
     const rows = [...document.querySelectorAll('.bg-orange-50')];
-    expect(rows[0].querySelectorAll('span')[0].textContent).toMatch(/2026/);
-    expect(rows[1].querySelectorAll('span')[0].textContent).toBe('');
+    expect(rows[0]!.querySelectorAll('span')[0]!.textContent).toMatch(/2026/);
+    expect(rows[1]!.querySelectorAll('span')[0]!.textContent).toBe('');
   });
 });
 
@@ -137,7 +137,7 @@ describe('SummaryBar details', () => {
     expect(screen.getByText('الأقرب - 20 يونيو')).toBeInTheDocument();
     const cards = [...container.firstElementChild!.children];
     expect(cards).toHaveLength(3);
-    expect(cards[2].className).not.toBe(cards[1].className);   // the third card spans the row
+    expect(cards[2]!.className).not.toBe(cards[1]!.className);   // the third card spans the row
   });
 });
 

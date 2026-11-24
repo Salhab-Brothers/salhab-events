@@ -57,9 +57,9 @@ describe('weekendAvailability', () => {
       makeBooking({ id: '4', date: '2026-06-10' }),   // already past: not counted anywhere
     ], today, 2);
     expect(out[0]).toEqual({ month: 'حزيران', booked: 2, free: 2 });
-    expect(out[1].month).toBe('تموز');
-    expect(out[1].booked).toBe(0);
-    expect(out[1].free).toBe(9);   // July 2026 has 5 Fridays and 4 Saturdays
+    expect(out[1]!.month).toBe('تموز');
+    expect(out[1]!.booked).toBe(0);
+    expect(out[1]!.free).toBe(9);   // July 2026 has 5 Fridays and 4 Saturdays
   });
   it('covers six months by default', () => expect(weekendAvailability([], today)).toHaveLength(6));
 });

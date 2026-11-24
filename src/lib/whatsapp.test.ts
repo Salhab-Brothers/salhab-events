@@ -28,7 +28,7 @@ describe('replies', () => {
   it('builds a wa.me link with the encoded text', () => {
     const link = replyLink(makeRequest({ status: 'approved', phone: '0501234567' }))!;
     expect(link.startsWith('https://wa.me/972501234567?text=')).toBe(true);
-    expect(decodeURIComponent(link.split('text=')[1])).toBe(replyText(makeRequest({ status: 'approved', phone: '0501234567' })));
+    expect(decodeURIComponent(link.split('text=')[1]!)).toBe(replyText(makeRequest({ status: 'approved', phone: '0501234567' })));
   });
 });
 

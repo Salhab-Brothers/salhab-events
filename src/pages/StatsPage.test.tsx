@@ -1,20 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import { makeBooking } from '@/test/factories';
-
-// jsdom has no layout, so charts render nothing; stub them with plain elements.
-vi.mock('recharts', () => {
-  const Box = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
-  return {
-    ResponsiveContainer: Box, BarChart: Box, PieChart: Box, Pie: Box, Bar: Box,
-    XAxis: () => null, YAxis: () => null,
-    // Show what a hover tooltip would say, and which colour each bar or slice gets.
-    Tooltip: ({ formatter }: { formatter?: (v: number, name?: string) => unknown }) =>
-      formatter ? <i data-testid="tip" data-text={JSON.stringify([formatter(1, 'booked'), formatter(1, 'free')])} /> : null,
-    Cell: ({ fill }: { fill?: string }) => <i data-testid="cell" data-fill={fill} />,
-  };
-});
 
 import StatsPage from './StatsPage';
 
@@ -86,7 +72,10 @@ describe('StatsPage', () => {
       makeBooking({ id: '1', time_slot: 'lunch' }),
       makeBooking({ id: '2', time_slot: 'afternoon' }),
     ]} />);
-    expect(screen.getAllByTestId('cell')).toHaveLength(2 + 7);
+    const pie = document.querySelector('svg[role="presentation"][viewBox]')!;
+    expect(pie.querySelectorAll('path')).toHaveLength(2);                        // one slice per slot in use
+    expect(document.querySelectorAll('[data-bar="الأحد"]')).toHaveLength(1);    // and a bar position for every weekday
+    expect(['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'].every(d => bar(d))).toBe(true);
   });
 
   it('orders months chronologically even when bookings arrive unordered', () => {
@@ -117,20 +106,27 @@ describe('StatsPage', () => {
     expect(lines.indexOf('الأحد: 0')).toBeLessThan(lines.indexOf('الجمعة: 2'));
   });
 
+  const bar = (label: string) => document.querySelector(`[data-bar="${label}"]`)!;
+  const fillsOf = (label: string) => [...bar(label).querySelectorAll('path')].map(p => p.getAttribute('fill'));
+
   it('highlights only Friday and Saturday in the weekday chart', () => {
-    render(<StatsPage bookings={[makeBooking({ id: '1', date: '2026-06-19' })]} />);
-    const fills = screen.getAllByTestId('cell').slice(-7).map(c => c.getAttribute('data-fill'));
-    expect(fills.slice(0, 5).every(f => f === fills[0])).toBe(true);
-    expect(fills[5]).toBe(fills[6]);
-    expect(fills[5]).not.toBe(fills[0]);
+    render(<StatsPage bookings={[
+      makeBooking({ id: '1', date: '2026-06-19' }), makeBooking({ id: '2', date: '2026-06-20' }), makeBooking({ id: '3', date: '2026-06-15' }),
+    ]} />);
+    const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    const [monday, friday, saturday] = [fillsOf(days[1]!)[0], fillsOf(days[5]!)[0], fillsOf(days[6]!)[0]];
+    expect(friday).toBe(saturday);        // Friday and Saturday share a colour
+    expect(friday).not.toBe(monday);      // an ordinary day has another
   });
 
-  it('words the hover tooltips', () => {
-    render(<StatsPage bookings={[makeBooking({ id: '1', date: '2026-06-19' })]} />);
-    const tips = screen.getAllByTestId('tip').map(t => JSON.parse(t.getAttribute('data-text')!));
-    expect(tips).toContainEqual([[1, 'محجوز'], [1, 'متاح']]);
-    expect(tips.filter(t => JSON.stringify(t) === JSON.stringify([[1, 'حجز'], [1, 'حجز']]))).toHaveLength(2);   // monthly and weekday charts
-    expect(tips).toContainEqual([[1, 'مناسبة'], [1, 'مناسبة']]);
+  it('words the hover text of each bar', () => {
+    render(<StatsPage bookings={[makeBooking({ id: '1', date: '2026-06-19', event_name: 'زفاف' })]} />);
+    const titles = [...document.querySelectorAll('svg title')].map(t => t.textContent);
+    expect(titles).toContain('الجمعة: 1 حجز');
+    expect(titles).toContain('حزيران 2026: 1 حجز');
+    expect(titles).toContain('زفاف: 1 مناسبة');
+    expect(titles.some(t => /^حزيران: \d+ محجوز$/.test(t ?? ''))).toBe(true);
+    expect(titles.some(t => /^حزيران: \d+ متاح$/.test(t ?? ''))).toBe(true);
   });
 
   it('gives every slot in the legend its own colour', () => {

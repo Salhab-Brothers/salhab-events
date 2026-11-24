@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: the strings here are CSS classes and wording, which the screenshot and browser tests cover
 import { useEffect, useId, useRef } from 'react';
 import { formatFullDate } from '@/lib/levantineMonths';
 import { X, Clock, User, Send } from 'lucide-react';

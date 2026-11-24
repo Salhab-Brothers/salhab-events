@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: the strings here are CSS classes and wording, which the screenshot and browser tests cover
 import { useState, type FormEvent } from 'react';
 import { format } from 'date-fns';
 import { CheckCircle } from 'lucide-react';

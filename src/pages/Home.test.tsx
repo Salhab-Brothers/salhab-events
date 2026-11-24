@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@/test/user';
 import { makeBooking, makeRequest } from '@/test/factories';
 
@@ -269,3 +269,38 @@ describe('Home: admin area', () => {
     expect(document.documentElement.classList.contains('dark')).toBe(true);
   });
 });
+
+describe('Home: details', () => {
+  it('logs why loading failed', async () => {
+    Booking.list.mockRejectedValueOnce(new Error('down'));
+    render(<Home />);
+    await screen.findByText(/تعذّر تحميل البيانات/);
+    expect(console.error).toHaveBeenCalledWith('Failed to load data', expect.any(Error));
+  });
+
+  it('shows the retry message on each page that needs the data, and only on those', async () => {
+    Booking.list.mockRejectedValue(new Error('down'));
+    render(<Home />);
+    await screen.findByText(/تعذّر تحميل البيانات/);                       // calendar
+    await userEvent.click(nav('المناسبات'));
+    expect(screen.getByText(/تعذّر تحميل البيانات/)).toBeInTheDocument();   // events
+    await userEvent.click(nav('الإحصائيات'));
+    expect(screen.getByText(/تعذّر تحميل البيانات/)).toBeInTheDocument();   // stats
+    await userEvent.click(nav('طلب حجز'));
+    expect(screen.queryByText(/تعذّر تحميل البيانات/)).toBeNull();
+  });
+
+  it('does not show a retry message while loading works', async () => {
+    render(<Home />);
+    await screen.findByText('calendar:2');
+    expect(screen.queryByText(/تعذّر تحميل البيانات/)).toBeNull();
+  });
+
+  it('makes the content area focusable by script only, and the skip link stays on the page', async () => {
+    render(<Home />);
+    await screen.findByText('calendar:2');
+    expect(screen.getByRole('main')).toHaveAttribute('tabindex', '-1');
+    expect(fireEvent.click(screen.getByRole('link', { name: 'انتقل إلى المحتوى' }))).toBe(false);   // default prevented
+  });
+});
+

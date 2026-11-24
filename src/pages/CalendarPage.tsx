@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: the strings here are CSS classes and wording, which the screenshot and browser tests cover
 import SummaryBar from '@/components/SummaryBar';
 import CalendarGrid from '@/components/calendar/CalendarGrid';
 import type { Booking } from '@/types';

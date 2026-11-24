@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: the strings here are CSS classes and wording, which the screenshot and browser tests cover
 import { useEffect, useState, useCallback } from 'react';
 import { Check, Trash2, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';

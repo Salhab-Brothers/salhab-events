@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: the strings here are CSS classes and wording, which the screenshot and browser tests cover
 import { useMemo, type ReactNode } from 'react';
 import { parseISO, isAfter, startOfToday } from 'date-fns';
 import { LEVANTINE_MONTHS } from '@/lib/levantineMonths';
@@ -8,14 +9,17 @@ import { busiestMonth, eventTypeCounts, shortMonth, weekendAvailability } from '
 import type { Booking } from '@/types';
 
 const CAIRO = "'Cairo Variable', sans-serif";
+// Stryker disable next-line ObjectLiteral: chart look
 const TICK = { fontSize: 13, fontFamily: CAIRO };
 const SLOT_COLORS: Record<CanonicalSlot, string> = { lunch: '#f59e0b', afternoon: '#3b82f6', wedding: '#7c3aed', full: '#ef4444' };
 const SLOT_LABELS: Record<CanonicalSlot, string> = { lunch: 'غداء ظهراً', afternoon: 'خطبة / طلبة عصراً', wedding: 'حفل زفاف مساءاً', full: 'اليوم كاملاً' };
 const DAY_NAMES = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
 // People who asked their device for less motion get charts that appear at once instead of growing in.
+// Stryker disable ArrowFunction,BooleanLiteral,ConditionalExpression,EqualityOperator,LogicalOperator: whether the charts animate is not visible in tests
 const animateCharts = () =>
   typeof window.matchMedia !== 'function' || !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Stryker restore ArrowFunction,BooleanLiteral,ConditionalExpression,EqualityOperator,LogicalOperator
 
 const monthKey = (date: string) => {
   const d = parseISO(date);
@@ -44,18 +48,11 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
   const upcoming = active.filter(b => isAfter(parseISO(b.date), today)).length;
   const past = active.length - upcoming;
 
-  // Bookings per month, in calendar order (keyed by the earliest date seen for each month)
+  // Bookings per month, in calendar order (yyyy-MM sorts the same way)
   const monthlyData = useMemo(() => {
     const counts: Record<string, number> = {};
-    const firstDate: Record<string, string> = {};
-    active.forEach(b => {
-      const key = monthKey(b.date);
-      counts[key] = (counts[key] || 0) + 1;
-      if (!firstDate[key] || b.date < firstDate[key]) firstDate[key] = b.date;
-    });
-    return Object.keys(counts)
-      .sort((a, b) => firstDate[a].localeCompare(firstDate[b]))
-      .map(month => ({ month, count: counts[month] }));
+    active.forEach(b => { const key = b.date.slice(0, 7); counts[key] = (counts[key] || 0) + 1; });
+    return Object.keys(counts).sort().map(key => ({ month: monthKey(`${key}-01`), count: counts[key] }));
   }, [active]);
 
   // Slot distribution, most popular first
@@ -90,6 +87,7 @@ export default function StatsPage({ bookings }: { bookings: Booking[] }) {
     { icon: Flame, label: 'أكثر شهر ازدحاماً', value: busiest ? busiest.month : '-', color: 'text-rose-700 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-950/30' },
   ];
 
+  // Stryker disable BooleanLiteral,ObjectLiteral,ArrayDeclaration,UnaryOperator: chart settings and look, which jsdom cannot show (the screenshots do)
   return (
     <div className="animate-fade-in">
       <div className="mb-6">

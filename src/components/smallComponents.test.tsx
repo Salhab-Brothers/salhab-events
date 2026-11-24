@@ -107,3 +107,48 @@ describe('PageNotFound', () => {
     expect(screen.getByRole('link')).toHaveAttribute('href', '/');
   });
 });
+
+describe('IslamicDateWarning colours', () => {
+  it.each([['2026-02-17', 'bg-indigo-50'], ['2026-05-26', 'bg-teal-50'], ['2026-03-19', 'bg-purple-50'], ['2026-05-27', 'bg-purple-50']])(
+    'uses its own colour on %s', (date, cls) => {
+      const { container } = render(<IslamicDateWarning dateStr={date} />);
+      expect(container.firstElementChild!.className).toContain(cls);
+    });
+});
+
+describe('ConflictDialog dates', () => {
+  it('writes the date of a conflict out, and nothing for a booking without one', () => {
+    render(<ConflictDialog conflicts={[
+      makeBooking({ event_name: 'زفاف أ', date: '2026-05-01', time_slot: 'wedding' }),
+      makeBooking({ id: 'b2', event_name: 'غداء ب', date: '', time_slot: 'lunch' }),
+    ]} onOverride={vi.fn()} onCancel={vi.fn()} />);
+    const rows = [...document.querySelectorAll('.bg-orange-50')];
+    expect(rows[0].querySelectorAll('span')[0].textContent).toMatch(/2026/);
+    expect(rows[1].querySelectorAll('span')[0].textContent).toBe('');
+  });
+});
+
+describe('SummaryBar details', () => {
+  afterEach(() => vi.useRealTimers());
+  it('names the next event with its day and month in Arabic, and gives the last card a wider look only', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 5, 15));
+    const { container } = render(<SummaryBar bookings={[makeBooking({ date: '2026-06-20', event_name: 'الأقرب' })]} />);
+    expect(screen.getByText('الأقرب - 20 يونيو')).toBeInTheDocument();
+    const cards = [...container.firstElementChild!.children];
+    expect(cards).toHaveLength(3);
+    expect(cards[2].className).not.toBe(cards[1].className);   // the third card spans the row
+  });
+});
+
+
+describe('SlotPicker', () => {
+  it('marks only the chosen slot as pressed and highlighted', async () => {
+    const { SlotPicker } = await import('./FormControls');
+    const { container } = render(<><span id="lbl">وقت</span><SlotPicker value="afternoon" onChange={vi.fn()} labelId="lbl" /></>);
+    const buttons = [...container.querySelectorAll('button')];
+    expect(buttons).toHaveLength(4);
+    expect(buttons.map(b => b.getAttribute('aria-pressed'))).toEqual(['false', 'true', 'false', 'false']);
+    expect(buttons.map(b => b.className.includes('bg-primary'))).toEqual([false, true, false, false]);
+  });
+});

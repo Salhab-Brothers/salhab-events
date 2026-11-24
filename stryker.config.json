@@ -2,13 +2,17 @@
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
   "testRunner": "vitest",
   "plugins": ["@stryker-mutator/vitest-runner"],
-  "mutate": ["src/lib/**/*.ts", "src/api/api.ts", "src/pages/AdminPage.tsx", "src/pages/RequestPage.tsx", "src/components/AvailabilityHint.tsx", "supabase/functions/**/*.ts", "!**/*.test.ts", "!supabase/functions/**/index.ts"],
+  "mutate": [
+    "src/lib/**/*.ts", "src/api/api.ts", "src/pages/*.tsx", "src/components/**/*.tsx", "supabase/functions/**/*.ts",
+    "!**/*.test.{ts,tsx}", "!supabase/functions/**/index.ts", "!src/components/ui/**",
+    "!src/components/DownloadEventsImage.tsx", "!src/components/EventCardDownload.tsx", "!src/components/Logo.tsx", "!src/components/Footer.tsx"
+  ],
   "coverageAnalysis": "perTest",
   "incremental": true,
   "incrementalFile": ".stryker-cache/incremental.json",
   "reporters": ["clear-text", "html", "json"],
   "htmlReporter": { "fileName": "reports/mutation/index.html" },
   "jsonReporter": { "fileName": "reports/mutation/mutation.json" },
-  "thresholds": { "high": 90, "low": 75, "break": 95 },
+  "thresholds": { "high": 90, "low": 75, "break": 96 },
   "tempDirName": ".stryker-tmp"
 }

@@ -42,8 +42,9 @@ describe('Captcha', () => {
     expect(onToken).toHaveBeenLastCalledWith('tok');
     opts['expired-callback']();
     expect(onToken).toHaveBeenLastCalledWith(null);
+    onToken.mockClear();
     opts['error-callback']();
-    expect(onToken).toHaveBeenLastCalledWith(null);
+    expect(onToken).toHaveBeenCalledWith(null);
 
     unmount();
     expect(turnstile.remove).toHaveBeenCalledWith('w1');
@@ -72,4 +73,49 @@ describe('Captcha', () => {
     await waitFor(() => expect(onToken).toHaveBeenCalledWith(null));
     expect(turnstile.render).not.toHaveBeenCalled();
   });
+
+  it('loads nothing at all without a site key', async () => {
+    const Captcha = await loadCaptcha();
+    vi.stubEnv('VITE_TURNSTILE_SITE_KEY', '');
+    render(<Captcha onToken={vi.fn()} />);
+    await new Promise(r => setTimeout(r, 20));
+    expect(document.head.querySelector('script')).toBeNull();
+    expect(turnstile.render).not.toHaveBeenCalled();
+  });
+
+  it('loads the Cloudflare script asynchronously', async () => {
+    const Captcha = await loadCaptcha();
+    vi.stubEnv('VITE_TURNSTILE_SITE_KEY', 'site');
+    render(<Captcha onToken={vi.fn()} />);
+    await waitFor(() => expect(document.head.querySelector('script')).not.toBeNull());
+    const script = document.head.querySelector('script')!;
+    expect(script.src).toContain('challenges.cloudflare.com/turnstile');
+    expect(script.async).toBe(true);
+  });
+
+  it('does not draw the widget if it was removed before the script finished loading', async () => {
+    const Captcha = await loadCaptcha();
+    vi.stubEnv('VITE_TURNSTILE_SITE_KEY', 'site');
+    const { unmount } = render(<Captcha onToken={vi.fn()} />);
+    await waitFor(() => expect(document.head.querySelector('script')).not.toBeNull());
+    unmount();
+    document.head.querySelector('script')!.dispatchEvent(new Event('load'));
+    await new Promise(r => setTimeout(r, 20));
+    expect(turnstile.render).not.toHaveBeenCalled();
+    expect(turnstile.remove).not.toHaveBeenCalled();
+  });
+
+  it('copes with the script loading but Turnstile being missing', async () => {
+    const Captcha = await loadCaptcha();
+    vi.stubEnv('VITE_TURNSTILE_SITE_KEY', 'site');
+    delete window.turnstile;
+    const onToken = vi.fn();
+    const { unmount } = render(<Captcha onToken={onToken} />);
+    await waitFor(() => expect(document.head.querySelector('script')).not.toBeNull());
+    document.head.querySelector('script')!.dispatchEvent(new Event('load'));
+    await new Promise(r => setTimeout(r, 20));
+    expect(() => unmount()).not.toThrow();
+    expect(onToken).not.toHaveBeenCalled();
+  });
 });
+

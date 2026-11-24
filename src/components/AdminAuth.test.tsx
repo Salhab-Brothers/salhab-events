@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@/test/user';
 
 const { signInAdmin } = vi.hoisted(() => ({ signInAdmin: vi.fn() }));
@@ -57,4 +57,28 @@ describe('AdminAuth', () => {
     await userEvent.click(toggle);
     expect(pw).toHaveAttribute('type', 'password');
   });
+
+  it('shows no error at first, and stops the browser submitting the form itself', () => {
+    const { container } = render(<AdminAuth />);
+    expect(container.querySelector('.text-destructive')).toBeNull();
+    expect(fireEvent.submit(container.querySelector('form')!)).toBe(false);
+  });
+
+  it('drops the old error when signing in again, and when the phone is edited', async () => {
+    signInAdmin.mockRejectedValueOnce(new Error('bad'));
+    const { container } = render(<AdminAuth />);
+    await fill('0501234567', 'wrong');
+    await userEvent.click(screen.getByRole('button', { name: 'دخول' }));
+    await screen.findByText(/غير صحيحة/);
+    await userEvent.type(screen.getByLabelText(/رقم الهاتف/), '1');
+    expect(container.querySelector('.text-destructive')).toBeNull();
+
+    signInAdmin.mockRejectedValueOnce(new Error('bad'));
+    await userEvent.click(screen.getByRole('button', { name: 'دخول' }));
+    await screen.findByText(/غير صحيحة/);
+    signInAdmin.mockImplementationOnce(() => new Promise(() => {}));
+    await userEvent.click(screen.getByRole('button', { name: 'دخول' }));
+    expect(container.querySelector('.text-destructive')).toBeNull();   // cleared as soon as the new attempt starts
+  });
 });
+

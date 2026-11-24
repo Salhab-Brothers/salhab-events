@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: the strings here are CSS classes and wording, which the screenshot and browser tests cover
 import { getIslamicEvents } from '@/lib/islamicDates';
 
 const TYPE_STYLE = {

@@ -84,4 +84,32 @@ describe('ReviewModeration', () => {
     expect(await screen.findByText('تعذّر تنفيذ العملية')).toBeInTheDocument();
     expect(screen.getByText('منتظر')).toBeInTheDocument();
   });
+
+  it('shows only the details a review has, and no error when all is well', async () => {
+    Review.list.mockResolvedValue([approved]);
+    const { container } = render(<ReviewModeration />);
+    await screen.findByText('مقبول');
+    expect(container.querySelector('.text-destructive')).toBeNull();
+    const card = screen.getByText('مقبول').closest('.rounded-xl')!;
+    expect(card.querySelectorAll('p')).toHaveLength(0);               // no event name, no comment
+    expect(screen.queryByText('بانتظار المراجعة')).toBeNull();        // already approved
+  });
+
+  it('logs failures, and drops an old error when the next action starts', async () => {
+    Review.list.mockRejectedValueOnce(new Error('x'));
+    render(<ReviewModeration />);
+    await screen.findByText('تعذّر تحميل التقييمات');
+    expect(console.error).toHaveBeenCalledWith('Failed to load reviews', expect.any(Error));
+
+    Review.list.mockResolvedValue([pending]);
+    Review.update.mockRejectedValueOnce(new Error('nope')).mockImplementationOnce(() => new Promise(() => {}));
+    const { unmount } = render(<ReviewModeration />);
+    await userEvent.click((await screen.findAllByText('قبول'))[0]);
+    await screen.findByText('تعذّر تنفيذ العملية');
+    expect(console.error).toHaveBeenCalledWith('Review action failed', expect.any(Error));
+    await userEvent.click(screen.getAllByText('قبول')[0]);
+    await waitFor(() => expect(screen.queryByText('تعذّر تنفيذ العملية')).toBeNull());
+    unmount();
+  });
 });
+

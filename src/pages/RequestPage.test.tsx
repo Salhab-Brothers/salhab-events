@@ -166,3 +166,59 @@ describe('RequestPage: availability', () => {
     window.location.hash = '';
   });
 });
+
+describe('RequestPage form details', () => {
+  it('requires only the first and family names, and starts without errors', () => {
+    const { container } = render(<RequestPage />);
+    expect(screen.getByLabelText('الاسم الأول')).toBeRequired();
+    expect(screen.getByLabelText('اسم العائلة')).toBeRequired();
+    expect(screen.getByLabelText('الاسم الثاني')).not.toBeRequired();
+    expect(screen.getByLabelText('الاسم الثالث')).not.toBeRequired();
+    expect(container.querySelector('.text-destructive')).toBeNull();
+    expect(screen.getByLabelText(/رقم الهاتف/)).not.toHaveAttribute('aria-invalid', 'true');
+  });
+  it('keeps the honeypot out of the tab order', () => {
+    const { container } = render(<RequestPage />);
+    expect(container.querySelector('input[name="website"]')).toHaveAttribute('tabindex', '-1');
+  });
+  it('takes over today as the date from the link, but not a day that has passed', () => {
+    const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    window.location.hash = `#/request?date=${iso(new Date())}`;
+    const first = render(<RequestPage />);
+    expect(first.container.querySelector<HTMLInputElement>('input[type="date"]')!.value).toBe(iso(new Date()));
+    first.unmount();
+    window.location.hash = `#/request?date=${iso(yesterday)}`;
+    const second = render(<RequestPage />);
+    expect(second.container.querySelector<HTMLInputElement>('input[type="date"]')!.value).toBe('');
+    window.location.hash = '';
+  });
+  it('stops the browser from submitting the form itself', () => {
+    const { container } = render(<RequestPage />);
+    expect(fireEvent.submit(container.querySelector('form')!)).toBe(false);
+  });
+});
+
+describe('RequestPage failures and the third name', () => {
+  it('sends the third name too', async () => {
+    const { container } = render(<RequestPage />);
+    await fillRequired(container);
+    await userEvent.type(screen.getByLabelText('الاسم الثالث'), 'محمود');
+    await userEvent.click(screen.getByRole('button', { name: /إرسال/ }));
+    await screen.findByText('تم إرسال طلبك بنجاح');
+    expect(BookingRequest.create).toHaveBeenCalledWith(expect.objectContaining({ third_name: 'محمود' }));
+  });
+  it('logs a failed send, and drops the old error message when the form is sent again', async () => {
+    BookingRequest.create.mockRejectedValueOnce(new Error('down'));
+    const { container } = render(<RequestPage />);
+    await fillRequired(container);
+    await userEvent.click(screen.getByRole('button', { name: /إرسال/ }));
+    await screen.findByText(/تعذّر إرسال الطلب/);
+    expect(console.error).toHaveBeenCalledWith('Request submit failed', expect.any(Error));
+    await userEvent.clear(screen.getByLabelText(/رقم الهاتف/));
+    await userEvent.type(screen.getByLabelText(/رقم الهاتف/), '12');
+    await userEvent.click(screen.getByRole('button', { name: /إرسال/ }));
+    expect(screen.queryByText(/تعذّر إرسال الطلب/)).toBeNull();
+  });
+});
+

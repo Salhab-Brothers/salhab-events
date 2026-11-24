@@ -27,12 +27,7 @@ export const createHandler = (deps: Deps) => async (req: Request): Promise<Respo
   if (req.method !== 'POST') return reply({ error: 'method' }, 405);
   if (badOrigin) return reply({ error: 'origin' }, 403);
 
-  let input: { kind?: unknown; row?: unknown; token?: unknown };
-  try {
-    input = await req.json();
-  } catch {
-    return reply({ error: 'bad json' }, 400);
-  }
+  const input: { kind?: unknown; row?: unknown; token?: unknown } | null = await req.json().catch(() => null);
   if (input === null || typeof input !== 'object') return reply({ error: 'bad json' }, 400);
 
   const token = typeof input.token === 'string' ? input.token : '';

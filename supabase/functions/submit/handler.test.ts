@@ -47,6 +47,7 @@ describe('methods and CORS', () => {
     expect(res.status).toBe(200);
     expect(res.headers.get('access-control-allow-origin')).toBe(SITE);
     expect(res.headers.get('vary')).toBe('Origin');
+    expect(await res.text()).toBe('ok');
   });
   it('answers a preflight without an Origin header, with no allow-origin', async () => {
     const res = await handler()(new Request('https://fn.example/submit', { method: 'OPTIONS' }));
@@ -188,6 +189,7 @@ describe('storing the form', () => {
   it('refuses an unknown kind, a missing row, a non-object row or an invalid row', async () => {
     for (const body of [
       { kind: 'booking', row: request },
+      { kind: 'booking', row: review },
       { row: request },
       { kind: 'request' },
       { kind: 'request', row: 'text' },
@@ -207,5 +209,35 @@ describe('storing the form', () => {
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({ error: 'save' });
     expect(console.error).toHaveBeenCalledWith('submit: insert failed', '42501', 'permission denied for table reviews');
+  });
+});
+
+describe('answers in detail', () => {
+  const json = async (res: Response) => ({ status: res.status, type: res.headers.get('content-type'), body: await res.json() });
+  it('answers every refusal with its own status and error code, as JSON', async () => {
+    expect(await json(await handler()(new Request('https://fn.example/submit', { method: 'PUT' })))).toMatchObject({ status: 405, type: 'application/json', body: { error: 'method' } });
+    expect(await json(await handler()(new Request('https://fn.example/submit', { method: 'OPTIONS', headers: { Origin: 'https://evil.example' } })))).toMatchObject({ status: 403, body: { error: 'origin' } });
+    expect((await json(await handler()(post('{nope')))).body).toEqual({ error: 'bad json' });
+    expect((await json(await handler()(post('null')))).body).toEqual({ error: 'bad json' });
+    expect(await json(await handler()(post({ kind: 'review', row: review })))).toMatchObject({ status: 403, body: { error: 'captcha' } });
+  });
+  it('says the captcha check is unavailable, and logs why', async () => {
+    fetchMock.mockRejectedValue(new Error('network'));
+    expect(await json(await handler()(post({ kind: 'review', row: review, token: 't' })))).toMatchObject({ status: 503, body: { error: 'captcha unavailable' } });
+    expect(console.error).toHaveBeenCalledWith('submit: captcha check unavailable', expect.any(Error));
+  });
+  it('posts the token to Cloudflare', async () => {
+    await handler()(post({ kind: 'review', row: review, token: 't' }));
+    expect(fetchMock.mock.calls[0][1].method).toBe('POST');
+  });
+  it('accepts a token of exactly the longest allowed length', async () => {
+    expect((await handler()(post({ kind: 'review', row: review, token: 'x'.repeat(2048) }))).status).toBe(200);
+  });
+  it('confirms a saved form with ok true, as JSON', async () => {
+    expect(await json(await handler()(post({ kind: 'review', row: review, token: 't' })))).toEqual({ status: 200, type: 'application/json', body: { ok: true } });
+  });
+  it('says save failed when the database refuses', async () => {
+    insert.mockResolvedValue({ code: '23505', message: 'dup' });
+    expect(await json(await handler()(post({ kind: 'review', row: review, token: 't' })))).toMatchObject({ status: 500, body: { error: 'save' } });
   });
 });

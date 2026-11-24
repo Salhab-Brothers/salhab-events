@@ -42,6 +42,7 @@ describe('api', () => {
     expect(q.order).toHaveBeenCalledWith('created_date', { ascending: true });
     expect(q.limit).toHaveBeenCalledWith(5);
     expect(PUBLIC_BOOKING_COLUMNS).not.toMatch(/phone|notes/);
+    expect(PUBLIC_BOOKING_COLUMNS).toBe('id,date,event_name,time_slot,person_name,status,book_diwan,created_date');
   });
 
   it('creates, updates and deletes rows', async () => {
@@ -56,6 +57,7 @@ describe('api', () => {
     expect(q.eq).toHaveBeenLastCalledWith('id', 'b1');
     await entities.Booking.delete('b1');
     expect(q.delete).toHaveBeenCalled();
+    expect(q.eq).toHaveBeenLastCalledWith('id', 'b1');   // the delete is limited to that one row
   });
 
   it('throws the backend error', async () => {

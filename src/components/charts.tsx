@@ -1,3 +1,4 @@
+// Stryker disable StringLiteral: the font and colour names are the look of the charts, which the screenshots cover
 import { useLayoutEffect, useRef, useState } from 'react';
 import { labelStep, yTicks } from '@/lib/chartScale';
 
@@ -33,10 +34,13 @@ function BarLabel({ text, centre, right, y }: { text: string; centre: number; ri
   return <text x={spills ? right : centre} y={y} textAnchor={spills ? 'end' : 'middle'} fill={MUTED}>{text}</text>;
 }
 
+/** Two decimals are plenty for a screen, and keep the paths short and free of floating-point noise. */
+const n = (v: number) => Math.round(v * 100) / 100;
+
 /** A bar with rounded top corners, as a path. */
 const roundedTop = (x: number, y: number, w: number, h: number, r: number) => {
   const c = Math.min(r, h, w / 2);
-  return `M${x} ${y + h}V${y + c}Q${x} ${y} ${x + c} ${y}H${x + w - c}Q${x + w} ${y} ${x + w} ${y + c}V${y + h}Z`;
+  return `M${n(x)} ${n(y + h)}V${n(y + c)}Q${n(x)} ${n(y)} ${n(x + c)} ${n(y)}H${n(x + w - c)}Q${n(x + w)} ${n(y)} ${n(x + w)} ${n(y + c)}V${n(y + h)}Z`;
 };
 
 /**
@@ -101,7 +105,7 @@ export interface Slice { value: number; color: string; title: string }
 export function PieChart({ slices, size = 180 }: { slices: Slice[]; size?: number }) {
   const total = slices.reduce((s, x) => s + x.value, 0);
   const r = size / 2 - 15;
-  const point = (turn: number): [number, number] => [r * Math.sin(turn * 2 * Math.PI), -r * Math.cos(turn * 2 * Math.PI)];
+  const point = (turn: number): [number, number] => [n(r * Math.sin(turn * 2 * Math.PI)), n(-r * Math.cos(turn * 2 * Math.PI))];
   let done = 0;
   return (
     <svg viewBox={`${-size / 2} ${-size / 2} ${size} ${size}`} width="100%" height={size} role="presentation">

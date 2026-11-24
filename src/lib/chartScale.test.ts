@@ -17,6 +17,7 @@ describe('yTicks', () => {
   });
 
   it('copes with a huge maximum by widening the step', () => {
+    expect(yTicks(5000)).toEqual([0, 1250, 2500, 3750, 5000]);
     const ticks = yTicks(25000);
     expect(ticks.length).toBeLessThanOrEqual(5);
     expect(ticks.at(-1)!).toBeGreaterThanOrEqual(25000);
@@ -30,6 +31,11 @@ describe('labelStep', () => {
   });
   it('goes by the longest label', () => {
     expect(labelStep(['ا', 'ا'.repeat(30)], 50, 13)).toBeGreaterThan(labelStep(['ا', 'ا'], 50, 13));
+  });
+  it('estimates a label as 55% of its font size per character, plus a little room', () => {
+    expect(labelStep(['ا'.repeat(10)], 10, 10)).toBe(7);   // 10 * 10 * 0.55 + 8 = 63 over a band of 10
+    expect(labelStep(['ا'.repeat(10)], 64, 10)).toBe(1);
+    expect(labelStep(['ا'.repeat(10)], 62, 10)).toBe(2);
   });
   it('never returns less than one, even without labels', () => expect(labelStep([], 10, 13)).toBe(1));
 });

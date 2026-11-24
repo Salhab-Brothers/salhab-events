@@ -6,7 +6,7 @@ import pluginReactHooks from "eslint-plugin-react-hooks";
 import pluginUnusedImports from "eslint-plugin-unused-imports";
 
 export default tseslint.config(
-  { ignores: ["dist", "dist-pwa", "coverage", "node_modules", "OldProject", "data-export", "secrets"] },
+  { ignores: ["dist", "dist-pwa", "coverage", "node_modules", "OldProject", "data-export", "secrets", "reports", ".stryker-tmp", ".stryker-cache"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

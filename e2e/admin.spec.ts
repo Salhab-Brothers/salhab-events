@@ -29,7 +29,7 @@ test('approving a request creates a confirmed booking', async ({ page }) => {
   expect(bookings.data).toHaveLength(1);
   expect(bookings.data![0]).toMatchObject({ event_name: 'خطبة', status: 'confirmed', phone: '0507776655' });
   const requests = await service.from('booking_requests').select('status');
-  expect(requests.data![0].status).toBe('approved');
+  expect(requests.data![0]!.status).toBe('approved');
 });
 
 test('admin sees phones and can approve a review so it goes public', async ({ page, context }) => {

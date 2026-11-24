@@ -103,7 +103,7 @@ describe('AdminPage requests', () => {
     render(<AdminPage {...p} />);
     const links = screen.getAllByRole('link', { name: 'رد عبر واتساب' });
     expect(links).toHaveLength(1);
-    expect(links[0].getAttribute('href')).toMatch(/^https:\/\/wa\.me\/972501234567\?text=/);
+    expect(links[0]!.getAttribute('href')).toMatch(/^https:\/\/wa\.me\/972501234567\?text=/);
   });
 
   it('rejects a request', async () => {
@@ -158,7 +158,7 @@ describe('AdminPage bookings', () => {
     await goTo('الحجوزات');
     expect([...container.querySelectorAll('h3')].map((h) => h.textContent)).toEqual(['أول', 'ثاني']);
     expect(screen.getByText('🏛️ الديوان')).toBeInTheDocument();
-    expect(p.bookings[0].id).toBe('b2');
+    expect(p.bookings[0]!.id).toBe('b2');
   });
 
   it('exports the bookings as a CSV file', async () => {
@@ -175,7 +175,7 @@ describe('AdminPage bookings', () => {
   });
 
   it('opens the editor for a booking', async () => {
-    const p = { ...props(), bookings: [twoBookings[1]] };
+    const p = { ...props(), bookings: [twoBookings[1]!] };
     render(<AdminPage {...p} />);
     await goTo('الحجوزات');
     await userEvent.click(screen.getByTitle('تعديل'));
@@ -184,7 +184,7 @@ describe('AdminPage bookings', () => {
   });
 
   it('deletes after confirmation and refreshes', async () => {
-    const p = { ...props(), bookings: [twoBookings[1]] };
+    const p = { ...props(), bookings: [twoBookings[1]!] };
     render(<AdminPage {...p} />);
     await goTo('الحجوزات');
     await userEvent.click(screen.getByRole('button', { name: /^حذف/ }));
@@ -195,7 +195,7 @@ describe('AdminPage bookings', () => {
   });
 
   it('keeps the booking when the admin declines', async () => {
-    const p = { ...props(), bookings: [twoBookings[1]] };
+    const p = { ...props(), bookings: [twoBookings[1]!] };
     render(<AdminPage {...p} />);
     await goTo('الحجوزات');
     await userEvent.click(screen.getByRole('button', { name: /^حذف/ }));

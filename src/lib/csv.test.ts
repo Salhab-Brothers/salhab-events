@@ -42,14 +42,14 @@ describe('bookingsToCsv', () => {
   });
 
   it('formats slot, diwan flag and missing private fields', () => {
-    const [, row] = bookingsToCsv([
+    const [, row = ''] = bookingsToCsv([
       makeBooking({ time_slot: 'full', book_diwan: true, phone: undefined, notes: undefined, status: 'pending' }),
     ]).split('\n');
     expect(row).toContain('"اليوم كاملاً"');
     expect(row).toContain('"نعم"');
     expect(row).toContain('"pending"');
     expect(row.endsWith('"pending","نعم",""')).toBe(true);
-    expect(row.split(',')[4]).toBe('""');   // the phone column is empty, not missing
+    expect(row.split(',')[4]!).toBe('""');   // the phone column is empty, not missing
   });
 
   it('marks bookings without a diwan', () => {

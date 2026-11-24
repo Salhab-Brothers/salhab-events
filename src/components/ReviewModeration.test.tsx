@@ -104,10 +104,10 @@ describe('ReviewModeration', () => {
     Review.list.mockResolvedValue([pending]);
     Review.update.mockRejectedValueOnce(new Error('nope')).mockImplementationOnce(() => new Promise(() => {}));
     const { unmount } = render(<ReviewModeration />);
-    await userEvent.click((await screen.findAllByText('قبول'))[0]);
+    await userEvent.click((await screen.findAllByText('قبول'))[0]!);
     await screen.findByText('تعذّر تنفيذ العملية');
     expect(console.error).toHaveBeenCalledWith('Review action failed', expect.any(Error));
-    await userEvent.click(screen.getAllByText('قبول')[0]);
+    await userEvent.click(screen.getAllByText('قبول')[0]!);
     await waitFor(() => expect(screen.queryByText('تعذّر تنفيذ العملية')).toBeNull());
     unmount();
   });

@@ -1,3 +1,5 @@
+import { addDays, format, parseISO } from 'date-fns';
+
 // Islamic holidays, worked out from the Umm al-Qura calendar (approximate: the real day depends on the moon).
 
 export type IslamicEventType = 'ramadan_start' | 'eid_fitr' | 'arafah' | 'eid_adha';
@@ -61,11 +63,8 @@ export function buildIslamicDateMap() {
   const map: Record<string, IslamicDay[]> = {};
 
   ISLAMIC_EVENTS.forEach(event => {
-    const [year, month, day] = event.date.split('-').map(Number);
-
     for (let i = 0; i < event.days; i++) {
-      const d = new Date(year, month - 1, day + i);
-      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const dateStr = format(addDays(parseISO(event.date), i), 'yyyy-MM-dd');
 
       if (!map[dateStr]) map[dateStr] = [];
 

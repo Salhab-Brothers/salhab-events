@@ -73,7 +73,7 @@ describe('after a failed review', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     renderWithQuery(<ReviewsPage />);
     await userEvent.type(screen.getByLabelText(/اسمك/), 'سارة');
-    await userEvent.click(document.querySelectorAll('form button[type="button"]')[4]);
+    await userEvent.click(document.querySelectorAll('form button[type="button"]')[4]!);
     const widget = screen.getByRole('button', { name: 'solve' });
     await userEvent.click(widget);
     await userEvent.click(screen.getByRole('button', { name: /إرسال التقييم/ }));
@@ -87,7 +87,7 @@ describe('captcha on the review form', () => {
   it('blocks sending until solved, then sends through the verifying function', async () => {
     renderWithQuery(<ReviewsPage />);
     await userEvent.type(screen.getByLabelText(/اسمك/), 'سارة');
-    await userEvent.click(document.querySelectorAll('form button[type="button"]')[4]);
+    await userEvent.click(document.querySelectorAll('form button[type="button"]')[4]!);
 
     const send = screen.getByRole('button', { name: /إرسال التقييم/ });
     expect(send).toBeDisabled();
